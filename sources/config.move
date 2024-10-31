@@ -1,0 +1,106 @@
+module stingray::config{
+
+    const EVersionNotMatched: u64 = 0;
+    const EOverBaseMax: u64 = 1;
+    const ELessThanMinAsset: u64 = 2;
+
+    public struct GlobalConfig has key{ 
+        id: UID,
+        version: u64,
+        max_trader_fee: u64,
+        min_fund_base: u64,
+        max_fund_base: u64,
+    }
+
+    public struct AdminCap has key{
+        id: UID,
+    }
+
+    fun init(ctx: &mut TxContext){
+
+        let admin_cap = AdminCap{
+            id: object::new(ctx),
+        };
+
+        let config = GlobalConfig{
+            id: object::new(ctx),
+            version: 1u64,
+            max_trader_fee: 20,
+            min_fund_base: 1000000000,
+            max_fund_base: 5000000000,
+        };
+
+        transfer::transfer(admin_cap, ctx.sender());
+        transfer::share_object(config);
+    }
+
+    public fun upgrade(
+        _: &AdminCap,
+        config: &mut GlobalConfig,
+    ){
+        config.version = config.version + 1;
+    }
+
+    public fun update_trader_fee(
+        _: &AdminCap,
+        config: &mut GlobalConfig,
+        new_trader_fee: u64,
+    ){
+        config.max_trader_fee = new_trader_fee;
+    }
+
+    public fun update_min_base(
+        _: &AdminCap,
+        config: &mut GlobalConfig,
+        new_fund_base: u64,
+    ){
+        config.min_fund_base = new_fund_base;
+    }
+
+     public fun update_max_base(
+        _: &AdminCap,
+        config: &mut GlobalConfig,
+        new_fund_base: u64,
+    ){
+        config.max_fund_base = new_fund_base;
+    }
+
+    public(package) fun max_trader_fee(
+        config: &GlobalConfig,
+    ): u64{
+        config.max_trader_fee
+    }
+
+    public(package) fun min_fund_base(
+        config: &GlobalConfig,
+    ): u64{
+        config.min_fund_base
+    }
+
+    public(package) fun max_fund_base(
+        config: &GlobalConfig,
+    ): u64{
+        config.max_fund_base
+    }
+
+    public(package) fun assert_if_version_not_matched(
+        config: &GlobalConfig,
+        contract_version: u64,
+    ) {
+        assert!(config.version == contract_version, EVersionNotMatched);
+    }
+
+    public(package) fun assert_if_base_over_max(
+        config: &GlobalConfig,
+        after_base: u64,
+    ) {
+        assert!(after_base <= config.max_fund_base, EOverBaseMax);
+    }
+
+    public(package) fun assert_if_less_than_min_fund_base(
+        config: &GlobalConfig,
+        input_base_amount: u64,
+    ){
+        assert!(config.min_fund_base() < input_base_amount, ELessThanMinAsset);
+    }
+}
