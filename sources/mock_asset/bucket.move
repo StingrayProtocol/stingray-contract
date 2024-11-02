@@ -17,8 +17,8 @@ module stingray::bucket{
         let (treasury_cap, metadata) = coin::create_currency<BUCKET>(
             witness,
             2,
-            b"OTHER",
-            b"Other Coin",
+            b"BUCKET",
+            b"BUCEKT",
             b"",
             option::none(),
             ctx);

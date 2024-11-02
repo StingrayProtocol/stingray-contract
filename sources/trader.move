@@ -92,7 +92,7 @@ module stingray::trader{
         let controller = HostController{
             id: object::new(ctx),
             balance: balance::zero<SUI>(),
-            register_fee: 10000000000,
+            register_fee: 10000000, // 0.01 SUI
         };
 
         transfer::public_transfer(displayer, deployer);
@@ -100,19 +100,19 @@ module stingray::trader{
         transfer::share_object(controller);
     } 
 
-    public fun mint(
+    public entry fun mint(
         config: &mut GlobalConfig,
         controller: &mut HostController,
         sui_ns: SuinsRegistration,
         pfp_img: String, // blob id 
         card_img: String, // blob id 
-        balance: Balance<SUI>,
+        coin: Coin<SUI>,
         clock: &Clock,
         ctx: &mut TxContext,
-    ) : Trader{
+    ) {
 
         config::assert_if_version_not_matched(config, VERSION);
-
+        let balance = coin.into_balance();
         assert_if_ns_expired_by_ns(&sui_ns, clock);
         assert_if_balance_not_matched(controller, &balance );
 
@@ -143,7 +143,7 @@ module stingray::trader{
             }
         );
 
-        trader
+        transfer::transfer(trader, ctx.sender());
     }
 
     #[allow(lint(self_transfer))]

@@ -76,8 +76,6 @@ module stingray::fund_share{
         }
     }
 
-    
-
     public fun mint<FundCoinType>(
         config: &mut GlobalConfig,
         request: MintRequest<FundCoinType>,

@@ -14,6 +14,7 @@ module stingray::arena{
     use stingray::{
         config::{Self, AdminCap, GlobalConfig},
         fund::{Fund},
+        trader::{Trader},
     };
 
     const VERSION: u64 = 1;
@@ -26,6 +27,8 @@ module stingray::arena{
     const EArenaTypeNotAllowed: u64 = 2;
     const EStartTimeOverCurrentTime: u64 = 3;
     const EEndTimeNotMatched: u64 = 4;
+    const ENotArriveAttendTime: u64 = 5;
+    const ETraderNotMatched: u64 = 6;
 
     public struct ArenaRequest<phantom CoinType>{
         arena_type: u8,
@@ -53,6 +56,7 @@ module stingray::arena{
         arena: ID,
         arena_type: u8,
         end_time: u64, 
+        rank: u64,
     }
 
     fun init (ctx: &mut TxContext){
@@ -66,7 +70,7 @@ module stingray::arena{
         transfer::share_object(host);
     }
 
-    public fun new_arena <CoinType>(
+    public entry fun new_arena <CoinType>(
         config: &GlobalConfig,
         cap: &AdminCap,
         arena_type: u8,
@@ -90,7 +94,7 @@ module stingray::arena{
         transfer::share_object(arena);
     }
 
-    public(package) fun create_arena_request<CoinType>(
+    public fun create_arena_request<CoinType>(
         arena_type: u8,
     ): ArenaRequest<CoinType>{
         ArenaRequest<CoinType> { arena_type, }
@@ -141,14 +145,15 @@ module stingray::arena{
         request: ArenaRequest<CoinType>,
         arena: &mut Arena<CoinType>,
         fund: &mut Fund<CoinType>,
+        trader: &Trader,
+        clock: &Clock,
     ){
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_trader_already_attend(arena, fund);
-
+        assert_if_not_arrive_attend_time(arena,clock); 
         let request_type = request.arena_type;
         assert_if_fund_type_not_matched(arena, request_type);
-        assert_if_end_time_not_matched(fund.end_time(), arena.end_time);
-
+        assert_if_fund_trader_not_matched<CoinType>(fund, trader);
         // consume hot potato
         let ArenaRequest { 
             arena_type: _,
@@ -159,6 +164,10 @@ module stingray::arena{
         let certificate = create_certificate(arena);
 
         df::add(fund.id(), type_name::get<Certificate>(), certificate);
+
+        // update fund
+        fund.update_time(arena.start_time + arena.attend_duration, arena.start_time + arena.attend_duration + arena.invest_duration, arena.end_time);
+        fund.set_is_arena(true);
         
     }
 
@@ -170,6 +179,7 @@ module stingray::arena{
             arena: *arena.id.as_inner(),
             arena_type: arena.arena_type,
             end_time: arena.end_time,
+            rank: 0,
         }
     }   
 
@@ -177,7 +187,7 @@ module stingray::arena{
         arena: &Arena<CoinType>,
         fund: &Fund<CoinType>,
     ){
-        assert!(arena.funds.contains(fund.trader()), ETraderAlreadyAttended);
+        assert!(!arena.funds.contains(fund.trader()), ETraderAlreadyAttended);
     }
 
     fun assert_if_fund_type_not_matched<CoinType>(
@@ -207,11 +217,20 @@ module stingray::arena{
     //     assert!(arena.end_time <= clock.timestamp_ms(), ENotArrivedEndTime);
     // }
 
-    fun assert_if_end_time_not_matched(
-        fund_end_time: u64,
-        arena_end_time: u64,
+
+    fun assert_if_not_arrive_attend_time<ArenaCoinType>(
+        arena: &Arena<ArenaCoinType>,
+        clock: &Clock,
     ){
-        assert!(fund_end_time == arena_end_time, EEndTimeNotMatched);
+        assert!((clock.timestamp_ms() <= (arena.start_time + arena.attend_duration)) &&
+                (clock.timestamp_ms() >= arena.start_time), ENotArriveAttendTime);
+    }
+
+    fun assert_if_fund_trader_not_matched<FundCoinType>(
+        fund: &Fund<FundCoinType>,
+        trader: &Trader,
+    ){
+        assert!(fund.trader() == trader.id(), ETraderNotMatched);
     }
 
     

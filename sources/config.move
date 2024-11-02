@@ -26,8 +26,8 @@ module stingray::config{
             id: object::new(ctx),
             version: 1u64,
             max_trader_fee: 20,
-            min_fund_base: 1000000000,
-            max_fund_base: 5000000000,
+            min_fund_base: 100000000,
+            max_fund_base: 500000000,
         };
 
         transfer::transfer(admin_cap, ctx.sender());
@@ -101,6 +101,6 @@ module stingray::config{
         config: &GlobalConfig,
         input_base_amount: u64,
     ){
-        assert!(config.min_fund_base() < input_base_amount, ELessThanMinAsset);
+        assert!(config.min_fund_base() <= input_base_amount, ELessThanMinAsset);
     }
 }

@@ -17,8 +17,8 @@ module stingray::scallop{
         let (treasury_cap, metadata) = coin::create_currency<SCALLOP>(
             witness,
             2,
-            b"OTHER",
-            b"Other Coin",
+            b"SCALLOP",
+            b"SCALLOP",
             b"",
             option::none(),
             ctx);
