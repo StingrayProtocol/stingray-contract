@@ -1,7 +1,7 @@
 module stingray::fund{
     use std::{
         type_name::{Self, TypeName},
-        string::{Self},  
+        string::{Self, String},  
     };
 
     use sui::{
@@ -95,6 +95,7 @@ module stingray::fund{
 
     public struct Fund<phantom CoinType> has key {
         id: UID,
+        description: String,
         trader: ID,
         trader_fee: u64,
         asset: InvestRecord,
@@ -109,6 +110,7 @@ module stingray::fund{
     // create fund
     public fun create<FundCoinType> (
         config: &GlobalConfig,
+        description: String,
         trader: &Trader,
         trader_fee: u64,
         is_arena: bool,
@@ -140,6 +142,7 @@ module stingray::fund{
 
         let fund = Fund<FundCoinType>{
             id: object::new(ctx),
+            description,
             trader: trader.id(),
             trader_fee,
             asset: investRecord,
@@ -843,6 +846,12 @@ module stingray::fund{
         }
     }
 
+    public fun description<CoinType>(
+        fund: &Fund<CoinType>,
+    ):String{
+        fund.description
+    }
+
     public fun is_arena<CoinType>(
         fund: &Fund<CoinType>,
     ): bool{
@@ -882,6 +891,15 @@ module stingray::fund{
         fund.time.start_time = start_time;
         fund.time.invest_duration = invest_duration;
         fund.time.end_time = end_time;
+    }
+
+    public(package) fun update_description<FundCoinType>(
+        fund: &mut Fund<FundCoinType>,
+        new_description: String,
+        trader: &Trader,
+    ){
+        assert_if_trader_not_matched(fund, trader);
+        fund.description = new_description;
     }
 
     public(package) fun set_is_arena<FundCoinType>(
