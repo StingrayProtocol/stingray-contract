@@ -10,6 +10,10 @@ module stingray::config{
         max_trader_fee: u64,
         min_fund_base: u64,
         max_fund_base: u64,
+        min_rewards: u64,
+        settle_percentage: u64,
+        base_percentage: u64,
+        platform: address,
     }
 
     public struct AdminCap has key{
@@ -28,6 +32,10 @@ module stingray::config{
             max_trader_fee: 20,
             min_fund_base: 100000000,
             max_fund_base: 500000000,
+            min_rewards: 1000000,
+            settle_percentage: 100,
+            base_percentage: 10000,
+            platform: @0x39dfa26ecaf49a466cfe33b2e98de9b46425eec170e59eb40d3f69d061a67778,
         };
 
         transfer::transfer(admin_cap, ctx.sender());
@@ -39,6 +47,14 @@ module stingray::config{
         config: &mut GlobalConfig,
     ){
         config.version = config.version + 1;
+    }
+
+    public fun set_platform(
+        _: &AdminCap,
+        config: &mut GlobalConfig,
+        new_platform: address,
+    ){
+        config.platform = new_platform;
     }
 
     public fun update_trader_fee(
@@ -71,10 +87,34 @@ module stingray::config{
         config.max_trader_fee
     }
 
+    public(package) fun min_rewards(
+        config: &GlobalConfig,
+    ): u64{
+        config.min_rewards
+    }
+
+    public(package) fun platform(
+        config: &GlobalConfig,
+    ): address{
+        config.platform
+    }
+
     public(package) fun min_fund_base(
         config: &GlobalConfig,
     ): u64{
         config.min_fund_base
+    }
+
+    public(package) fun settle_percentage(
+        config: &GlobalConfig,
+    ): u64{
+        config.settle_percentage
+    }
+
+    public(package) fun base_percentage(
+        config: &GlobalConfig,
+    ): u64{
+        config.base_percentage
     }
 
     public(package) fun max_fund_base(

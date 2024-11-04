@@ -26,9 +26,9 @@ module stingray::arena{
     const ETypeNotMatched: u64 = 1;
     const EArenaTypeNotAllowed: u64 = 2;
     const EStartTimeOverCurrentTime: u64 = 3;
-    const EEndTimeNotMatched: u64 = 4;
-    const ENotArriveAttendTime: u64 = 5;
-    const ETraderNotMatched: u64 = 6;
+    const ENotArriveAttendTime: u64 = 4;
+    const ETraderNotMatched: u64 = 5;
+    const EPreviousFund: u64 = 6;
 
     public struct ArenaRequest<phantom CoinType>{
         arena_type: u8,
@@ -151,6 +151,7 @@ module stingray::arena{
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_trader_already_attend(arena, fund);
         assert_if_not_arrive_attend_time(arena,clock); 
+        assert_if_fund_is_previous(fund, arena);
         let request_type = request.arena_type;
         assert_if_fund_type_not_matched(arena, request_type);
         assert_if_fund_trader_not_matched<CoinType>(fund, trader);
@@ -231,6 +232,13 @@ module stingray::arena{
         trader: &Trader,
     ){
         assert!(fund.trader() == trader.id(), ETraderNotMatched);
+    }
+
+    fun assert_if_fund_is_previous<FundCoinType>(
+        fund: &Fund<FundCoinType>,
+        arena: &Arena<FundCoinType>,
+    ){
+        assert!(fund.start_time() >= arena.end_time, EPreviousFund);
     }
 
     

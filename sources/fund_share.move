@@ -103,7 +103,7 @@ module stingray::fund_share{
     }
 
     public fun burn<FundCoinType>(
-        config: &mut GlobalConfig,
+        config: &GlobalConfig,
         request: BurnRequest<FundCoinType>,
         share: FundShare,
     ){
@@ -129,6 +129,12 @@ module stingray::fund_share{
         object::delete(id);
     }
 
+    public fun invest_amount(
+        share: &FundShare,
+    ): u64{
+        share.invest_amount
+    }
+
 
     fun assert_if_fund_id_not_matched(
         share: &FundShare,
@@ -143,7 +149,4 @@ module stingray::fund_share{
     ){
         assert!(share.end_time == request_end_time, EFundEndTimeNotMatched);
     }
-
-
-
 }
