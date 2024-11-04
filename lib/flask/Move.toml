@@ -1,0 +1,44 @@
+[package]
+name = "Flask"
+edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
+version = "0.3.0"
+# published-at = "0x1798f84ee72176114ddbf5525a6d964c5f8ea1b3738d08d50d0d3de4cf584884"
+# published-at = "0xd74e21d83d688ae21c5383b64530653c0e568a41e7a4d7aaac4a34a542bf07f8"
+published-at = "0x77d9c893b7ac9aa102ed1435c50bc935283ea23682e715ee0796739330922f3a"
+
+# license = ""           # e.g., "MIT", "GPL", "Apache 2.0"
+# authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+
+# For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
+# Revision can be a branch, a tag, and a commit hash.
+# MyRemotePackage = { git = "https://some.remote/host.git", subdir = "remote/path", rev = "main" }
+
+# For local dependencies use `local = path`. Path is relative to the package root
+# Local = { local = "../path/to" }
+
+# To resolve a version conflict and force a specific version for dependency
+# override use `override = true`
+# Override = { local = "../conflicting/version", override = true }
+
+[addresses]
+# flask = "0x0"
+flask = "0x1798f84ee72176114ddbf5525a6d964c5f8ea1b3738d08d50d0d3de4cf584884"
+upgrade_cap_id = "0xc4bdce87ec8084a995511db14fd54ea8591472e760fc334c3662b6a1a0cd7643"
+
+# Named addresses will be accessible in Move as `@name`. They're also exported:
+# for example, `std = "0x1"` is exported by the Standard Library.
+# alice = "0xA11CE"
+
+[dev-dependencies]
+# The dev-dependencies section allows overriding dependencies for `--test` and
+# `--dev` modes. You can introduce test-only dependencies here.
+# Local = { local = "../path/to/dev-build" }
+
+[dev-addresses]
+# The dev-addresses section allows overwriting named addresses for the `--test`
+# and `--dev` modes.
+# alice = "0xB0B"
+

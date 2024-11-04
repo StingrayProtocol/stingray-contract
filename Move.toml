@@ -5,18 +5,20 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet-v1.31.1" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 suins = { local = "./lib/suins" }
-# For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
-# Revision can be a branch, a tag, and a commit hash.
-# MyRemotePackage = { git = "https://some.remote/host.git", subdir = "remote/path", rev = "main" }
+# Bucket
+Flask = { git = "https://github.com/Sparkling-Finance/contract.git", subdir = "flask", rev = "main"}
+BucketProtocol = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", subdir = "bucket-protocol", rev = "test" }
+fountain = { git = "https://github.com/Fountain-Fi/contract", subdir = "fountain", rev = "main" }
+# CetusClmm
+CetusClmm = { local="./lib/clmmpool" }
+# Scallop
+ScallopProtocol = {local = "./lib/scallop/protocol"}
+# Suilend
+suilend = { git = "https://github.com/solendprotocol/suilend.git", subdir = "contracts/suilend", rev = "mainnet" } 
 
-# For local dependencies use `local = path`. Path is relative to the package root
-# Local = { local = "../path/to" }
 
-# To resolve a version conflict and force a specific version for dependency
-# override use `override = true`
-# Override = { local = "../conflicting/version", override = true }
 
 [addresses]
 stingray = "0x0"
