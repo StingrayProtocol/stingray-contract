@@ -98,6 +98,7 @@ module stingray::fund{
         description: String,
         trader: ID,
         trader_fee: u64,
+        trader_stake: u64,
         asset: InvestRecord,
         base: u64,
         time: TimeInfo,
@@ -145,6 +146,7 @@ module stingray::fund{
             description,
             trader: trader.id(),
             trader_fee,
+            trader_stake: init_amount,
             asset: investRecord,
             base: init_amount,
             time: TimeInfo{
@@ -774,7 +776,6 @@ module stingray::fund{
 
         fund.is_settle = true;
         
-
         // calculate rewards
         let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value();
         fund.after_amount = total_base;
@@ -814,7 +815,7 @@ module stingray::fund{
         // calculate rewards
         if (fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value() - fund.base >= config.min_rewards()){
             let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-            let investor_amount =  fund.after_amount  * share_amount / fund.share_info.total_share;
+            let investor_amount =  (fund.after_amount - fund.trader_stake - ((fund.after_amount - fund.base) * fund.trader_fee / config.base_percentage()))  * share_amount / fund.share_info.total_share;
             let to_investor_balance = total_asset.split<FundCoinType>(investor_amount);
             coin::from_balance<FundCoinType>(to_investor_balance, ctx)
         }else{
@@ -834,7 +835,7 @@ module stingray::fund{
         if (fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value() >= fund.base ){
             if (fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value() - fund.base >= config.min_rewards()){
                 let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-                let trader_amount = ( total_asset.value() - fund.base ) * fund.trader_fee / config.base_percentage();
+                let trader_amount = ( fund.after_amount - fund.base ) * fund.trader_fee / config.base_percentage();
                 let to_trader_balance = total_asset.split<FundCoinType>(trader_amount);
 
                 coin::from_balance<FundCoinType>(to_trader_balance, ctx)
@@ -850,6 +851,18 @@ module stingray::fund{
         fund: &Fund<CoinType>,
     ):String{
         fund.description
+    }
+
+    public fun after_amount<CoinType>(
+        fund: &Fund<CoinType>,
+    ):u64{
+        fund.after_amount
+    }
+
+    public fun base<CoinType>(
+        fund: &Fund<CoinType>,
+    ):u64{
+        fund.base
     }
 
     public fun is_arena<CoinType>(

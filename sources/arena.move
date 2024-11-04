@@ -1,7 +1,8 @@
 module stingray::arena{
 
-
-    use std::type_name::{Self};
+    use std::{
+        type_name::{Self},
+    };
 
     use sui::{
         sui::{SUI},
@@ -29,6 +30,10 @@ module stingray::arena{
     const ENotArriveAttendTime: u64 = 4;
     const ETraderNotMatched: u64 = 5;
     const EPreviousFund: u64 = 6;
+    const ETraderNotAttended: u64 = 7;
+
+    const BASE: u128 = 1_000_000_000;
+    const RANK_AMOUNT: u64 = 3;
 
     public struct ArenaRequest<phantom CoinType>{
         arena_type: u8,
@@ -41,6 +46,11 @@ module stingray::arena{
         current_month_round: u64,
     }
 
+    public struct Result has store{
+        trader: ID,
+        result: u128,
+    }
+
     public struct Arena<phantom CoinType> has key {
         id: UID,
         arena_type: u8,
@@ -50,6 +60,8 @@ module stingray::arena{
         end_time: u64,
         funds: Table<ID, ID>, // trader -> fund
         traders: vector<address>,
+        result: Table<u64, Result>,
+        is_rank_claimed: Table<ID, bool>,
     }
 
     public struct Certificate has store {
@@ -115,6 +127,8 @@ module stingray::arena{
         assert_if_arena_type_not_allowed(arena_type);
         assert_if_over_current_time(start_time, clock);
 
+        let result = table::new<u64, Result>(ctx);
+
         if (arena_type == WEEK){
             Arena{
                 id: object::new(ctx),
@@ -125,6 +139,8 @@ module stingray::arena{
                 end_time: start_time + (86400000 * 7),
                 funds: table::new<ID, ID>(ctx),
                 traders: vector::empty<address>(),
+                result,
+                is_rank_claimed: table::new<ID,bool>(ctx)
             }
         }else{ // MONTH
             Arena{
@@ -136,6 +152,8 @@ module stingray::arena{
                 end_time: start_time + (86400000 * 30),
                 funds: table::new<ID, ID>(ctx),
                 traders: vector::empty<address>(),
+                result,
+                is_rank_claimed: table::new<ID,bool>(ctx)
             }
         }  
     }
@@ -172,6 +190,81 @@ module stingray::arena{
         
     }
 
+    public fun challenge<CoinType>(
+        arena: &mut Arena<CoinType>,
+        fund: &Fund<CoinType>,
+        trader: &Trader,
+    ){
+        assert_if_fund_trader_not_matched(fund, trader);
+        assert_if_trader_not_attended_arena(arena, trader);
+
+        let mut result = 0;
+        
+        if (fund.after_amount() > fund.base()){
+            result = ((fund.after_amount() - fund.base()) as u128) * BASE / (fund.base() as u128);
+        };
+
+        if (result > 0){
+            
+            let mut current_idx = 0;
+            let mut key =  trader.id();
+            let mut value = result;
+
+            while(current_idx < RANK_AMOUNT){
+                if (!arena.result.contains(current_idx)){
+                    arena.result.add(current_idx, 
+                        Result{
+                            trader: trader.id(),
+                            result: result,
+                        });
+                };
+                let recorded_win = arena.result.remove(current_idx);
+                if (recorded_win.result < value){
+                    arena.result.add(current_idx, Result{
+                        trader: key,
+                        result: value,
+                    });
+                    key = recorded_win.trader;
+                    value = recorded_win.result;
+                }else{
+                    arena.result.add(current_idx, Result{
+                        trader: recorded_win.trader,
+                        result: recorded_win.result,
+                    });
+                };
+                current_idx = current_idx + 1;
+
+                let Result{
+                    trader: _,
+                    result: _,
+                } = recorded_win;
+            }
+            
+        }
+    }
+
+    public fun claim_rank<CoinType>(
+        arena: &mut Arena<CoinType>,
+        fund: &mut Fund<CoinType>,
+        trader: &mut Trader,
+    ){
+        assert_if_fund_trader_not_matched(fund, trader);
+        assert_if_trader_not_attended_arena(arena, trader);
+
+        let first = arena.result.borrow(0);
+        let second = arena.result.borrow(1);
+        let third = arena.result.borrow(2);
+
+        let certificate = df::borrow_mut<ID, Certificate>(&mut arena.id, *fund.id().as_inner());
+
+        if (trader.id() == first.trader){
+            certificate.rank = 1;
+        }else if (trader.id() == second.trader){
+            certificate.rank = 2;
+        }else if (trader.id() == third.trader){
+            certificate.rank = 3;
+        }; 
+    }
 
     fun create_certificate<CoinType>(
         arena: &Arena<CoinType>
@@ -211,13 +304,6 @@ module stingray::arena{
         assert!(start_time >= clock.timestamp_ms(), EStartTimeOverCurrentTime);
     }
 
-    // fun assert_if_not_arrived_end_time<CoinType>(
-    //     arena: &Arena<CoinType>,
-    //     clock: &Clock,
-    // ){
-    //     assert!(arena.end_time <= clock.timestamp_ms(), ENotArrivedEndTime);
-    // }
-
 
     fun assert_if_not_arrive_attend_time<ArenaCoinType>(
         arena: &Arena<ArenaCoinType>,
@@ -238,8 +324,14 @@ module stingray::arena{
         fund: &Fund<FundCoinType>,
         arena: &Arena<FundCoinType>,
     ){
-        assert!(fund.start_time() >= arena.end_time, EPreviousFund);
+        assert!(fund.start_time() >= arena.start_time, EPreviousFund);
     }
 
-    
+    fun assert_if_trader_not_attended_arena<FundCoinType>(   
+        arena: &Arena<FundCoinType>,
+        trader: &Trader,
+    ){
+        assert!(arena.funds.contains(trader.id()), ETraderNotAttended );
+    }
+
 }
