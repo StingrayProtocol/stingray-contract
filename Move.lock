@@ -25,7 +25,7 @@ dependencies = [
 
 [[move.package]]
 id = "BucketOracle"
-source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "" }
+source = { local = "lib/bucket-oracle" }
 
 dependencies = [
   { id = "Pyth", name = "Pyth" },
@@ -101,7 +101,7 @@ source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainn
 
 [[move.package]]
 id = "Pyth"
-source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/pyth" }
+source = { local = "lib/bucket-oracle/partners/pyth" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -135,20 +135,12 @@ source = { local = "lib/suilend-oracle" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
-  { id = "SuilendWormhole", name = "SuilendWormhole" },
-]
-
-[[move.package]]
-id = "SuilendWormhole"
-source = { local = "lib/suilend-wormhole" }
-
-dependencies = [
-  { id = "Sui", name = "Sui" },
+  { id = "Wormhole", name = "Wormhole" },
 ]
 
 [[move.package]]
 id = "SupraOracle"
-source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/supra" }
+source = { local = "lib/bucket-oracle/partners/supra" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -156,7 +148,7 @@ dependencies = [
 
 [[move.package]]
 id = "SwitchboardStdLib"
-source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/switchboard" }
+source = { local = "lib/bucket-oracle/partners/switchboard" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -173,7 +165,7 @@ dependencies = [
 
 [[move.package]]
 id = "Wormhole"
-source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/pyth/wormhole" }
+source = { local = "lib/wormhole" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -194,11 +186,6 @@ source = { local = "lib/scallop/sui_x_oracle/x_oracle" }
 dependencies = [
   { id = "Sui", name = "Sui" },
 ]
-
-[move.toolchain-version]
-compiler-version = "1.35.0"
-edition = "2024.beta"
-flavor = "sui"
 
 [[move.package]]
 id = "fountain"

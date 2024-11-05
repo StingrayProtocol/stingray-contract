@@ -1,27 +1,16 @@
 [package]
-name = "BucketProtocol"
+name = "VoloSuiRule"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
-version = "0.6.0"
-# published-at = "0x1f2ec04660d4d28593cdfd245e6e0d26c4c1127ee47dd313ff297efa0ccadf59"
-# published-at = "0x275b6c59f68837f7c8d7076254373a5bb16e20e6435967defdd86f943e70a2db"
-# published-at = "0x2545d6a3da56cfd79a0394710f42d038baf87bcf6cfd7f5bb14906dcd7f4e8b3"
-# published-at = "0x950e7f6121e57aa1a087bd4c13c33d00a1489478fb3a78685bf3d66b4a5e9c9c"
-# published-at = "0xb33a1e64335a024c4adfe9a9909abe39dae939593755f7fc745cd5fbd259197e"
-# published-at = "0x8e39c5069076cbb95bede1e5d2217c91f7fdc3ee266d778927f128e561c6f3eb"
-# published-at = "0xae5f248cacff46bc1ff9a2b0049963ad320b4d05a3d8b5dc3833e77c85cb6600"
-# published-at = "0x8573a39b0d5f21d7e0bbee317851c3ac27536d3649426735493e890805034274"
-# published-at = "0x0c592cdefe5ad2d062b128b6a097983e9c40a742c50abb867a5821714a628457"
-# published-at = "0x0275217e283b408b60adc2ca5f842df3e59fb71e06ee79f07b4eb989141f91d3"
-published-at = "0xb71c0893203d0f59622fc3fac849d0833de559d7503af21c5daf880d60d754ed"
 # license = ""           # e.g., "MIT", "GPL", "Apache 2.0"
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
+published-at = "0x1caed1bf0cc4ca7357989b3a08e487078c6e60277512a8799347010e9ea92e8f"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
-BucketOracle = { local="../bucket-oracle"  }
-# BucketOracle = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "test-only"  }
-BucketFramework = { local = "../framework" }
-Flask = {local="../flask"}
+SuiSystem = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-system", rev = "framework/mainnet" }
+Volo = { local = "../../partners/volo" }
+BucketOracle = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet" }
+
 # For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
 # Revision can be a branch, a tag, and a commit hash.
 # MyRemotePackage = { git = "https://some.remote/host.git", subdir = "remote/path", rev = "main" }
@@ -34,8 +23,7 @@ Flask = {local="../flask"}
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-bucket_protocol = "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2"
-
+vsui_rule = "0x1caed1bf0cc4ca7357989b3a08e487078c6e60277512a8799347010e9ea92e8f"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.
