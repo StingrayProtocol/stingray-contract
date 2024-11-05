@@ -8,17 +8,15 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 suins = { local = "./lib/suins" }
 # Bucket
-Flask = { git = "https://github.com/Sparkling-Finance/contract.git", subdir = "flask", rev = "main"}
-BucketProtocol = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", subdir = "bucket-protocol", rev = "test" }
-fountain = { git = "https://github.com/Fountain-Fi/contract", subdir = "fountain", rev = "main" }
+Flask = { local="./lib/flask"}
+BucketProtocol = { local="./lib/bucket-protocol" }
+fountain = { local="./lib/fountain" }
 # CetusClmm
 CetusClmm = { local="./lib/clmmpool" }
 # Scallop
 ScallopProtocol = {local = "./lib/scallop/protocol"}
 # Suilend
-suilend = { git = "https://github.com/solendprotocol/suilend.git", subdir = "contracts/suilend", rev = "mainnet" } 
-
-
+suilend = { local="./lib/suilend" } 
 
 [addresses]
 stingray = "0x0"
@@ -36,4 +34,3 @@ stingray = "0x0"
 # The dev-addresses section allows overwriting named addresses for the `--test`
 # and `--dev` modes.
 # alice = "0xB0B"
-

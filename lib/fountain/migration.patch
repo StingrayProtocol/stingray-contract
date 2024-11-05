@@ -1,0 +1,459 @@
+--- ./sources/fountain_core.move
++++ ./sources/fountain_core.move
+@@ -22 +22 @@
+-    struct AdminCap has key, store {
++    public struct AdminCap has key, store {
+@@ -27 +27 @@
+-    struct Fountain<phantom S, phantom R> has store, key {
++    public struct Fountain<phantom S, phantom R> has store, key {
+@@ -41 +41 @@
+-    struct StakeProof<phantom S, phantom R> has store, key {
++    public struct StakeProof<phantom S, phantom R> has store, key {
+@@ -50 +50 @@
+-    struct PenaltyKey has store, copy, drop {}
++    public struct PenaltyKey has store, copy, drop {}
+@@ -52 +52 @@
+-    struct PenaltyVault<phantom S> has store {
++    public struct PenaltyVault<phantom S> has store {
+@@ -57 +57 @@
+-    struct StakeEvent<phantom S, phantom R> has copy, drop {
++    public struct StakeEvent<phantom S, phantom R> has copy, drop {
+@@ -65 +65 @@
+-    struct ClaimEvent<phantom S, phantom R> has copy, drop {
++    public struct ClaimEvent<phantom S, phantom R> has copy, drop {
+@@ -71 +71 @@
+-    struct UnstakeEvent<phantom S, phantom R> has copy, drop {
++    public struct UnstakeEvent<phantom S, phantom R> has copy, drop {
+@@ -78 +78 @@
+-    struct PenaltyEvent<phantom S> has copy, drop {
++    public struct PenaltyEvent<phantom S> has copy, drop {
+@@ -83 +83 @@
+-    struct SupplyEvent<phantom R> has copy, drop {
++    public struct SupplyEvent<phantom R> has copy, drop {
+@@ -88 +88 @@
+-    struct WithdrawEvent<phantom R> has copy, drop {
++    public struct WithdrawEvent<phantom R> has copy, drop {
+@@ -93 +93 @@
+-    struct FlowRateUpdated<phantom R> has copy, drop {
++    public struct FlowRateUpdated<phantom R> has copy, drop {
+@@ -99 +99 @@
+-    struct MaxPenaltyRateUpdated<phantom S> has copy, drop {
++    public struct MaxPenaltyRateUpdated<phantom S> has copy, drop {
+@@ -104 +104 @@
+-    struct PenaltyClaimed<phantom S> has copy, drop {
++    public struct PenaltyClaimed<phantom S> has copy, drop {
+@@ -255 +255 @@
+-        proof: StakeProof<S, R>,
++        mut proof: StakeProof<S, R>,
+@@ -285 +285 @@
+-        proof: StakeProof<S, R>,
++        mut proof: StakeProof<S, R>,
+@@ -302 +302 @@
+-        let returned_stake = balance::split(&mut fountain.staked, stake_amount);
++        let mut returned_stake = balance::split(&mut fountain.staked, stake_amount);
+@@ -454 +454 @@
+-            let released_amount = math::mul_factor(
++            let mut released_amount = math::mul_factor(
+@@ -512 +512 @@
+-            let released_amount = math::mul_factor(
++            let mut released_amount = math::mul_factor(
+--- ./sources/fountain_periphery.move
++++ ./sources/fountain_periphery.move
+@@ -57 +57 @@
+-            let (fountain, admin_cap) = core::new_fountain_with_admin_cap<S, R>(
++            let (mut fountain, admin_cap) = core::new_fountain_with_admin_cap<S, R>(
+@@ -70 +70 @@
+-            let fountain = core::new_fountain<S, R>(
++            let mut fountain = core::new_fountain<S, R>(
+--- ./sources/test/test_claim.move
++++ ./sources/test/test_claim.move
+@@ -22 +22 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -31,2 +31,2 @@
+-        let staker_count: u64 = 100;
+-        let stakers = ftu::stake_randomly<TEST_LP, SUI>(scenario, staker_count);
++        let mut staker_count: u64 = 100;
++        let mut stakers = ftu::stake_randomly<TEST_LP, SUI>(scenario, staker_count);
+@@ -36 +36 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -50 +50 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -55,2 +55,2 @@
+-        let idx: u64 = 0;
+-        let staker_reward_amounts = vector<u64>[];
++        let mut idx: u64 = 0;
++        let mut staker_reward_amounts = vector<u64>[];
+@@ -62 +62 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -64 +64 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -81 +81 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -122 +122 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -130,2 +130,2 @@
+-        let idx: u64 = 0;
+-        let staker_reward_amounts = vector<u64>[];
++        let mut idx: u64 = 0;
++        let mut staker_reward_amounts = vector<u64>[];
+@@ -137 +137 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -139 +139 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -156 +156 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -190 +190 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -197 +197 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -203 +203 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -205 +205 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -230 +230 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -237 +237 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -243 +243 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -246 +246 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -267 +267 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -279 +279 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -293 +293 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -303 +303 @@
+-            let fountain = fc::new_fountain<TEST_LP, SUI>(
++            let mut fountain = fc::new_fountain<TEST_LP, SUI>(
+@@ -311 +311 @@
+-            let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++            let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+--- ./sources/test/test_force_unstake.move
++++ ./sources/test/test_force_unstake.move
+@@ -21 +21 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -35 +35 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -53 +53 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -62,6 +62,6 @@
+-        let idx: u64 = 0;
+-        let unstakers = vector<address>[];
+-        let unstake_amounts = vector<u64>[];
+-        let reward_amounts = vector<u64>[];
+-        let after_total_weight = total_weight;
+-        let total_penalty_amount: u64 = 0;
++        let mut idx: u64 = 0;
++        let mut unstakers = vector<address>[];
++        let mut unstake_amounts = vector<u64>[];
++        let mut reward_amounts = vector<u64>[];
++        let mut after_total_weight = total_weight;
++        let mut total_penalty_amount: u64 = 0;
+@@ -73 +73 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -108 +108 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -132 +132 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+--- ./sources/test/test_stake.move
++++ ./sources/test/test_stake.move
+@@ -22 +22 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -34 +34 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -53 +53 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -65 +65 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -86 +86 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -98 +98 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+--- ./sources/test/test_start_time.move
++++ ./sources/test/test_start_time.move
+@@ -22 +22 @@
+-        let scenario_val = ts::begin(ftu::dev());
++        let mut scenario_val = ts::begin(ftu::dev());
+@@ -44 +44 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -54 +54 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -60 +60 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -62 +62 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -76 +76 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -78 +78 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
+@@ -96 +96 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -106 +106 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -112 +112 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -114 +114 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -140 +140 @@
+-        let scenario_val = ts::begin(ftu::dev());
++        let mut scenario_val = ts::begin(ftu::dev());
+@@ -162 +162 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -172 +172 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -178 +178 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -180 +180 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -194 +194 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -196 +196 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
+@@ -214 +214 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -224 +224 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -250 +250 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
+@@ -261 +261 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -266 +266 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+--- ./sources/test/test_unstake.move
++++ ./sources/test/test_unstake.move
+@@ -21 +21 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -35 +35 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -49 +49 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -58,7 +58,7 @@
+-        let idx: u64 = 0;
+-        let unstakers = vector<address>[];
+-        let stake_amounts = vector<u64>[];
+-        let reward_amounts = vector<u64>[];
+-        let after_stakers = vector<address>[];
+-        let after_stake_weights = vector<u64>[];
+-        let after_total_weight = total_weight;
++        let mut idx: u64 = 0;
++        let mut unstakers = vector<address>[];
++        let mut stake_amounts = vector<u64>[];
++        let mut reward_amounts = vector<u64>[];
++        let mut after_stakers = vector<address>[];
++        let mut after_stake_weights = vector<u64>[];
++        let mut after_total_weight = total_weight;
+@@ -70 +70 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -100 +100 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -124,2 +124,2 @@
+-            let clock = ts::take_shared<Clock>(scenario);
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -137 +137 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -144 +144 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -146 +146 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -155 +155 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -184 +184 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -198 +198 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -212 +212 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -217,4 +217,4 @@
+-        let idx: u64 = 0;
+-        let unstakers = vector<address>[];
+-        let stake_amounts = vector<u64>[];
+-        let reward_amounts = vector<u64>[];
++        let mut idx: u64 = 0;
++        let mut unstakers = vector<address>[];
++        let mut stake_amounts = vector<u64>[];
++        let mut reward_amounts = vector<u64>[];
+@@ -226 +226 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -252 +252 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -264 +264 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -278 +278 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -288 +288 @@
+-            let fountain = fc::new_fountain<TEST_LP, SUI>(
++            let mut fountain = fc::new_fountain<TEST_LP, SUI>(
+--- ./sources/test/test_update_flow_rate.move
++++ ./sources/test/test_update_flow_rate.move
+@@ -22 +22 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -31,2 +31,2 @@
+-        let staker_count: u64 = 87;
+-        let stakers = ftu::stake_randomly<TEST_LP, SUI>(scenario, staker_count);
++        let mut staker_count: u64 = 87;
++        let mut stakers = ftu::stake_randomly<TEST_LP, SUI>(scenario, staker_count);
+@@ -36 +36 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -50 +50 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -55,2 +55,2 @@
+-        let idx: u64 = 0;
+-        let staker_reward_amounts = vector<u64>[];
++        let mut idx: u64 = 0;
++        let mut staker_reward_amounts = vector<u64>[];
+@@ -62 +62 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -64 +64 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -78 +78 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -117 +117 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);   
+@@ -131 +131 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -139,2 +139,2 @@
+-        let idx: u64 = 0;
+-        let staker_reward_amounts = vector<u64>[];
++        let mut idx: u64 = 0;
++        let mut staker_reward_amounts = vector<u64>[];
+@@ -146 +146 @@
+-                let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -148 +148 @@
+-                let proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
++                let mut proof = ts::take_from_sender<StakeProof<TEST_LP, SUI>>(scenario);
+@@ -165 +165 @@
+-        let idx: u64 = 0;
++        let mut idx: u64 = 0;
+@@ -206 +206 @@
+-        let scenario_val = ftu::setup<TEST_LP, SUI>(
++        let mut scenario_val = ftu::setup<TEST_LP, SUI>(
+@@ -218 +218 @@
+-            let fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
++            let mut fountain = ts::take_shared<Fountain<TEST_LP, SUI>>(scenario);
+@@ -232 +232 @@
+-            let clock = ts::take_shared<Clock>(scenario);
++            let mut clock = ts::take_shared<Clock>(scenario);
+@@ -242 +242 @@
+-            let fountain = fc::new_fountain<TEST_LP, SUI>(
++            let mut fountain = fc::new_fountain<TEST_LP, SUI>(
+--- ./sources/test/test_utils.move
++++ ./sources/test/test_utils.move
+@@ -8 +8 @@
+-    struct TEST_LP has drop {}
++    public struct TEST_LP has drop {}
+@@ -48 +48 @@
+-        let scenario_val = ts::begin(DEV);
++        let mut scenario_val = ts::begin(DEV);
+@@ -51 +51 @@
+-            let clock = clock::create_for_testing(ts::ctx(scenario));
++            let mut clock = clock::create_for_testing(ts::ctx(scenario));
+@@ -81 +81 @@
+-        let seed = b"fountain stakers";
++        let mut seed = b"fountain stakers";
+@@ -83 +83 @@
+-        let rang = test_random::new(seed);
++        let mut rang = test_random::new(seed);
+@@ -86,2 +86,2 @@
+-        let stakers = vector<address>[];
+-        let idx: u64 = 1;
++        let mut stakers = vector<address>[];
++        let mut idx: u64 = 1;
+@@ -104,3 +104,3 @@
+-        let idx: u64 = 0;
+-        let expected_total_stake_amount: u64 = 0;
+-        let expected_total_stake_weight: u64 = 0;
++        let mut idx: u64 = 0;
++        let mut expected_total_stake_amount: u64 = 0;
++        let mut expected_total_stake_weight: u64 = 0;
+@@ -108 +108 @@
+-        let staker_weights = vector<u64>[];
++        let mut staker_weights = vector<u64>[];
+@@ -114 +114 @@
+-                let fountain = ts::take_shared<Fountain<S, R>>(scenario);
++                let mut fountain = ts::take_shared<Fountain<S, R>>(scenario);
+@@ -139 +139 @@
+-                let idx: u64 = 0;
++                let mut idx: u64 = 0;

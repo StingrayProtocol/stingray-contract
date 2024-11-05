@@ -2,12 +2,11 @@
 
 [move]
 version = 3
-manifest_digest = "2AF30A1CA8306EF69A0BDF8D8D6590CFF94A1CAD2416561F7EA6E81769B1EF20"
-deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
+manifest_digest = "667D1CA3890290399FB8318005259E7EF24E0D5A4362891E81E58659549645FA"
+deps_digest = "CAFAD8A7CF51067FB4358215BECB86BD100DD64E57C2AC8A7AE7D74B688F5965"
 dependencies = [
   { id = "BucketProtocol", name = "BucketProtocol" },
   { id = "CetusClmm", name = "CetusClmm" },
-  { id = "Flask", name = "Flask" },
   { id = "ScallopProtocol", name = "ScallopProtocol" },
   { id = "Sui", name = "Sui" },
   { id = "fountain", name = "fountain" },
@@ -17,15 +16,7 @@ dependencies = [
 
 [[move.package]]
 id = "BucketFramework"
-source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "test", subdir = "framework" }
-
-dependencies = [
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
-id = "BucketOracle"
-source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "test-only", subdir = "" }
+source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "without-oracle", subdir = "framework" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -33,13 +24,11 @@ dependencies = [
 
 [[move.package]]
 id = "BucketProtocol"
-source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "test", subdir = "bucket-protocol" }
+source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "without-oracle", subdir = "bucket-protocol" }
 
 dependencies = [
   { id = "BucketFramework", name = "BucketFramework" },
-  { id = "BucketOracle", name = "BucketOracle" },
   { id = "Flask", name = "Flask" },
-  { id = "Sui", name = "Sui" },
 ]
 
 [[move.package]]
@@ -62,7 +51,7 @@ dependencies = [
 
 [[move.package]]
 id = "Flask"
-source = { git = "https://github.com/Sparkling-Finance/contract.git", rev = "main", subdir = "flask" }
+source = { git = "https://github.com/Sparkling-Finance/contract.git", rev = "sbuck", subdir = "flask" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -134,8 +123,6 @@ dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
-[env]
-
 [[move.package]]
 id = "Wormhole"
 source = { git = "https://github.com/solendprotocol/wormhole.git", rev = "e1698d3c72b15cdddd7da98ad43e151f83b72a0a", subdir = "sui/wormhole" }
@@ -167,12 +154,6 @@ source = { git = "https://github.com/Fountain-Fi/contract", rev = "main", subdir
 dependencies = [
   { id = "Sui", name = "Sui" },
 ]
-
-[env.testnet]
-chain-id = "4c78adac"
-original-published-id = "0x128c56bc4c4ae69d1fa1addb5f8861d59cc677a3e7d390a7293a5de9cccced69"
-latest-published-id = "0x128c56bc4c4ae69d1fa1addb5f8861d59cc677a3e7d390a7293a5de9cccced69"
-published-version = "1"
 
 [[move.package]]
 id = "suilend"

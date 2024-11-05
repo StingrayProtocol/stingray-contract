@@ -21,7 +21,7 @@ Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-fram
 BucketOracle = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet"  }
 # BucketOracle = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "test-only"  }
 BucketFramework = { local = "../framework" }
-Flask = { git = "https://github.com/Sparkling-Finance/contract.git", subdir = "flask", rev = "main"}
+Flask = {local="../flask"}
 # For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
 # Revision can be a branch, a tag, and a commit hash.
 # MyRemotePackage = { git = "https://some.remote/host.git", subdir = "remote/path", rev = "main" }
