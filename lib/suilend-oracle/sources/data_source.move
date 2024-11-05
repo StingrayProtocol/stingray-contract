@@ -1,21 +1,21 @@
-module pyth::data_source {
+module suilend_pyth::data_source {
     use sui::dynamic_field::{Self};
     use sui::object::{UID};
     use sui::tx_context::{TxContext};
 
-    use pyth::set::{Self};
+    use suilend_pyth::set::{Self};
 
     use wormhole::external_address::ExternalAddress;
 
-    friend pyth::state;
-    friend pyth::set_data_sources;
-    friend pyth::pyth;
-    friend pyth::set_governance_data_source;
-    friend pyth::governance;
+    friend suilend_pyth::state;
+    friend suilend_pyth::set_data_sources;
+    friend suilend_pyth::pyth;
+    friend suilend_pyth::set_governance_data_source;
+    friend suilend_pyth::governance;
     #[test_only]
-    friend pyth::pyth_tests;
+    friend suilend_pyth::pyth_tests;
     #[test_only]
-    friend pyth::set_data_sources_tests;
+    friend suilend_pyth::set_data_sources_tests;
 
     const KEY: vector<u8> = b"data_sources";
     const E_DATA_SOURCE_REGISTRY_ALREADY_EXISTS: u64 = 0;

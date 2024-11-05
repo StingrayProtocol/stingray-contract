@@ -1,4 +1,4 @@
-module pyth::price_identifier {
+module suilend_pyth::price_identifier {
     use std::vector;
 
     const IDENTIFIER_BYTES_LENGTH: u64 = 32;

@@ -7,19 +7,19 @@
 /// 2.  Authorize upgrade.
 /// 3.  Upgrade.
 /// 4.  Commit upgrade.
-module pyth::contract_upgrade {
+module suilend_pyth::contract_upgrade {
     use sui::event::{Self};
     use sui::object::{ID};
     use sui::package::{UpgradeReceipt, UpgradeTicket};
     use wormhole::bytes32::{Self, Bytes32};
     use wormhole::cursor::{Self};
 
-    use pyth::state::{Self, State};
-    use pyth::governance_instruction::{Self};
-    use pyth::governance_action::{Self};
-    use pyth::governance::{Self, WormholeVAAVerificationReceipt};
+    use suilend_pyth::state::{Self, State};
+    use suilend_pyth::governance_instruction::{Self};
+    use suilend_pyth::governance_action::{Self};
+    use suilend_pyth::governance::{Self, WormholeVAAVerificationReceipt};
 
-    friend pyth::migrate;
+    friend suilend_pyth::migrate;
 
     /// Digest is all zeros.
     const E_DIGEST_ZERO_BYTES: u64 = 0;
@@ -138,6 +138,6 @@ module pyth::contract_upgrade {
 }
 
 #[test_only]
-module pyth::upgrade_contract_tests {
+module suilend_pyth::upgrade_contract_tests {
     // TODO
 }

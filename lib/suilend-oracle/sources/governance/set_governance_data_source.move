@@ -1,13 +1,13 @@
-module pyth::set_governance_data_source {
-    use pyth::deserialize;
-    use pyth::data_source;
-    use pyth::state::{Self, State, LatestOnly};
+module suilend_pyth::set_governance_data_source {
+    use suilend_pyth::deserialize;
+    use suilend_pyth::data_source;
+    use suilend_pyth::state::{Self, State, LatestOnly};
 
     use wormhole::cursor;
     use wormhole::external_address::{Self, ExternalAddress};
     use wormhole::bytes32::{Self};
 
-    friend pyth::governance;
+    friend suilend_pyth::governance;
 
     struct GovernanceDataSource {
         emitter_chain_id: u64,

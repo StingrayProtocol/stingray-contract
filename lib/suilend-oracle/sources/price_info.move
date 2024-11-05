@@ -1,4 +1,4 @@
-module pyth::price_info {
+module suilend_pyth::price_info {
     use sui::object::{Self, UID, ID};
     use sui::tx_context::{TxContext};
     use sui::dynamic_object_field::{Self};
@@ -6,8 +6,8 @@ module pyth::price_info {
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
 
-    use pyth::price_feed::{Self, PriceFeed};
-    use pyth::price_identifier::{PriceIdentifier};
+    use suilend_pyth::price_feed::{Self, PriceFeed};
+    use suilend_pyth::price_identifier::{PriceIdentifier};
 
     const KEY: vector<u8> = b"price_info";
     const FEE_STORAGE_KEY: vector<u8> = b"fee_storage";
@@ -15,8 +15,8 @@ module pyth::price_info {
     const E_PRICE_IDENTIFIER_ALREADY_REGISTERED: u64 = 1;
     const E_PRICE_IDENTIFIER_NOT_REGISTERED: u64 = 2;
 
-    friend pyth::pyth;
-    friend pyth::state;
+    friend suilend_pyth::pyth;
+    friend suilend_pyth::state;
 
     /// Sui object version of PriceInfo.
     /// Has a key ability, is unique for each price identifier, and lives in global store.
@@ -152,7 +152,7 @@ module pyth::price_info {
     public fun test_get_price_info_object_id_from_price_identifier(){
         use sui::object::{Self};
         use sui::test_scenario::{Self, ctx};
-        use pyth::price_identifier::{Self};
+        use suilend_pyth::price_identifier::{Self};
         let scenario = test_scenario::begin(@pyth);
         let uid = object::new(ctx(&mut scenario));
 

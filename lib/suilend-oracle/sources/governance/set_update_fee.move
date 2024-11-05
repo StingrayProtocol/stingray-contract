@@ -1,12 +1,12 @@
-module pyth::set_update_fee {
+module suilend_pyth::set_update_fee {
     use sui::math::{Self};
 
     use wormhole::cursor;
 
-    use pyth::deserialize;
-    use pyth::state::{Self, State, LatestOnly};
+    use suilend_pyth::deserialize;
+    use suilend_pyth::state::{Self, State, LatestOnly};
 
-    friend pyth::governance;
+    friend suilend_pyth::governance;
 
     const MAX_U64: u128 = (1 << 64) - 1;
     const E_EXPONENT_DOES_NOT_FIT_IN_U8: u64 = 0;
@@ -40,12 +40,12 @@ module pyth::set_update_fee {
 }
 
 #[test_only]
-module pyth::set_update_fee_tests {
+module suilend_pyth::set_update_fee_tests {
     use sui::test_scenario::{Self};
     use sui::coin::Self;
 
-    use pyth::pyth_tests::{Self, setup_test, take_wormhole_and_pyth_states};
-    use pyth::state::Self;
+    use suilend_pyth::pyth_tests::{Self, setup_test, take_wormhole_and_pyth_states};
+    use suilend_pyth::state::Self;
 
     const SET_FEE_VAA: vector<u8> = x"01000000000100189d01616814b185b5a26bde6123d48e0d44dd490bbb3bde5d12076247b2180068a8261165777076ae532b7b0739aaee6411c8ba0695d20d4fa548227ce15d8d010000000000000000000163278d271099bfd491951b3e648f08b1c71631e4a53674ad43e8f9f98068c3850000000000000001015054474d0103001500000000000000050000000000000005";
     // VAA Info:
@@ -67,11 +67,11 @@ module pyth::set_update_fee_tests {
 
         let verified_vaa = wormhole::vaa::parse_and_verify(&mut worm_state, SET_FEE_VAA, &clock);
 
-        let receipt = pyth::governance::verify_vaa(&pyth_state, verified_vaa);
+        let receipt = suilend_pyth::governance::verify_vaa(&pyth_state, verified_vaa);
 
         test_scenario::next_tx(&mut scenario, DEPLOYER);
 
-        pyth::governance::execute_governance_instruction(&mut pyth_state, receipt);
+        suilend_pyth::governance::execute_governance_instruction(&mut pyth_state, receipt);
 
         test_scenario::next_tx(&mut scenario, DEPLOYER);
 

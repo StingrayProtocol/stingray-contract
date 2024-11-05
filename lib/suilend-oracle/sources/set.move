@@ -1,5 +1,5 @@
 /// A set data structure.
-module pyth::set {
+module suilend_pyth::set {
     use sui::table::{Self, Table};
     use sui::tx_context::{TxContext};
     use std::vector;

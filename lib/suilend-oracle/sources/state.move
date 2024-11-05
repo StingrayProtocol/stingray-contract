@@ -1,32 +1,32 @@
-module pyth::state {
+module suilend_pyth::state {
     use std::vector;
     use sui::object::{Self, UID, ID};
     use sui::tx_context::{Self, TxContext};
     use sui::package::{UpgradeCap, UpgradeTicket, UpgradeReceipt};
 
-    use pyth::data_source::{Self, DataSource};
-    use pyth::price_info::{Self};
-    use pyth::price_identifier::{Self, PriceIdentifier};
-    use pyth::version_control::{Self};
+    use suilend_pyth::data_source::{Self, DataSource};
+    use suilend_pyth::price_info::{Self};
+    use suilend_pyth::price_identifier::{Self, PriceIdentifier};
+    use suilend_pyth::version_control::{Self};
 
     use wormhole::consumed_vaas::{Self, ConsumedVAAs};
     use wormhole::bytes32::{Self, Bytes32};
     use wormhole::package_utils::{Self};
     use wormhole::external_address::{ExternalAddress};
 
-    friend pyth::pyth;
+    friend suilend_pyth::pyth;
     #[test_only]
-    friend pyth::pyth_tests;
-    friend pyth::governance_action;
-    friend pyth::set_update_fee;
-    friend pyth::set_stale_price_threshold;
-    friend pyth::set_data_sources;
-    friend pyth::governance;
-    friend pyth::set_governance_data_source;
-    friend pyth::migrate;
-    friend pyth::contract_upgrade;
-    friend pyth::set_fee_recipient;
-    friend pyth::setup;
+    friend suilend_pyth::pyth_tests;
+    friend suilend_pyth::governance_action;
+    friend suilend_pyth::set_update_fee;
+    friend suilend_pyth::set_stale_price_threshold;
+    friend suilend_pyth::set_data_sources;
+    friend suilend_pyth::governance;
+    friend suilend_pyth::set_governance_data_source;
+    friend suilend_pyth::migrate;
+    friend suilend_pyth::contract_upgrade;
+    friend suilend_pyth::set_fee_recipient;
+    friend suilend_pyth::setup;
 
     /// Build digest does not agree with current implementation.
     const E_INVALID_BUILD_DIGEST: u64 = 0;

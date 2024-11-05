@@ -1,11 +1,11 @@
 // Implementation of a Merkle tree in Move. Supports constructing a new tree
 // with a given depth, as well as proving that a leaf node belongs to the tree.
-module pyth::merkle_tree {
+module suilend_pyth::merkle_tree {
     use std::vector::{Self};
     use sui::hash::{keccak256};
     use wormhole::bytes20::{Self, Bytes20, data};
     use wormhole::cursor::{Self, Cursor};
-    use pyth::deserialize::{Self};
+    use suilend_pyth::deserialize::{Self};
 
     const MERKLE_LEAF_PREFIX: u8 = 0;
     const MERKLE_NODE_PREFIX: u8 = 1;
@@ -368,7 +368,7 @@ module pyth::merkle_tree {
     }
 
     #[test]
-    #[expected_failure(abort_code = pyth::merkle_tree::E_DEPTH_NOT_LARGE_ENOUGH_FOR_MESSAGES)]
+    #[expected_failure(abort_code = suilend_pyth::merkle_tree::E_DEPTH_NOT_LARGE_ENOUGH_FOR_MESSAGES)]
     fun test_merkle_tree_depth_exceeded_1(){
         let messages = vector::empty<vector<u8>>();
         vector::push_back(&mut messages, x"00");
@@ -379,7 +379,7 @@ module pyth::merkle_tree {
     }
 
     #[test]
-    #[expected_failure(abort_code = pyth::merkle_tree::E_DEPTH_NOT_LARGE_ENOUGH_FOR_MESSAGES)]
+    #[expected_failure(abort_code = suilend_pyth::merkle_tree::E_DEPTH_NOT_LARGE_ENOUGH_FOR_MESSAGES)]
     fun test_merkle_tree_depth_exceeded_2(){
         let messages = vector::empty<vector<u8>>();
         vector::push_back(&mut messages, x"00");

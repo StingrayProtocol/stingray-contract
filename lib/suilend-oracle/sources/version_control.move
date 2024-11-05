@@ -7,7 +7,7 @@
 /// is not this build's, then paths through the `state` module will abort.
 ///
 /// See `pyth::state` and `wormhole::package_utils` for more info.
-module pyth::version_control {
+module suilend_pyth::version_control {
     ////////////////////////////////////////////////////////////////////////////
     //
     //  Hard-coded Version Control
@@ -59,7 +59,7 @@ module pyth::version_control {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-    friend pyth::state;
+    friend suilend_pyth::state;
 
     #[test_only]
     public fun dummy(): V__DUMMY {

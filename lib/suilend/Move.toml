@@ -10,7 +10,7 @@ subdir = "crates/sui-framework/packages/sui-framework"
 rev = "framework/mainnet"
 override = true
  
-[dependencies.Pyth]
+[dependencies.SuilendPyth]
 local="../suilend-oracle"
 
 [addresses]

@@ -1,10 +1,10 @@
-module pyth::set_stale_price_threshold {
+module suilend_pyth::set_stale_price_threshold {
     use wormhole::cursor;
 
-    use pyth::deserialize;
-    use pyth::state::{Self, State, LatestOnly};
+    use suilend_pyth::deserialize;
+    use suilend_pyth::state::{Self, State, LatestOnly};
 
-    friend pyth::governance;
+    friend suilend_pyth::governance;
 
     struct StalePriceThreshold {
         threshold: u64,
@@ -26,12 +26,12 @@ module pyth::set_stale_price_threshold {
 }
 
 #[test_only]
-module pyth::set_stale_price_threshold_test {
+module suilend_pyth::set_stale_price_threshold_test {
     use sui::test_scenario::{Self};
     use sui::coin::Self;
 
-    use pyth::pyth_tests::{Self, setup_test, take_wormhole_and_pyth_states};
-    use pyth::state::Self;
+    use suilend_pyth::pyth_tests::{Self, setup_test, take_wormhole_and_pyth_states};
+    use suilend_pyth::state::Self;
 
     const SET_STALE_PRICE_THRESHOLD_VAA: vector<u8> = x"010000000001000393eabdb4983e91e0fcfe7e6b2fc5c8fca2847fde52fd2f51a9b26b12298da13af09c271ce7723af8e0b1f52afa02b56f0b64764739b1b05e2f2c5cec80567c000000000000000000000163278d271099bfd491951b3e648f08b1c71631e4a53674ad43e8f9f98068c3850000000000000001015054474d0104001500000000000f4020";
     // VAA Info:
@@ -53,11 +53,11 @@ module pyth::set_stale_price_threshold_test {
 
         let verified_vaa = wormhole::vaa::parse_and_verify(&mut worm_state, SET_STALE_PRICE_THRESHOLD_VAA, &clock);
 
-        let receipt = pyth::governance::verify_vaa(&pyth_state, verified_vaa);
+        let receipt = suilend_pyth::governance::verify_vaa(&pyth_state, verified_vaa);
 
         test_scenario::next_tx(&mut scenario, DEPLOYER);
 
-        pyth::governance::execute_governance_instruction(&mut pyth_state, receipt);
+        suilend_pyth::governance::execute_governance_instruction(&mut pyth_state, receipt);
 
         test_scenario::next_tx(&mut scenario, DEPLOYER);
 

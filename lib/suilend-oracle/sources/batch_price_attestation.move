@@ -1,20 +1,20 @@
-module pyth::batch_price_attestation {
+module suilend_pyth::batch_price_attestation {
     use std::vector::{Self};
     use sui::clock::{Self, Clock};
 
-    use pyth::price_feed::{Self};
-    use pyth::price_info::{Self, PriceInfo};
-    use pyth::price_identifier::{Self};
-    use pyth::price_status;
-    use pyth::deserialize::{Self};
+    use suilend_pyth::price_feed::{Self};
+    use suilend_pyth::price_info::{Self, PriceInfo};
+    use suilend_pyth::price_identifier::{Self};
+    use suilend_pyth::price_status;
+    use suilend_pyth::deserialize::{Self};
 
     use wormhole::cursor::{Self, Cursor};
     use wormhole::bytes::{Self};
 
     #[test_only]
-    use pyth::price;
+    use suilend_pyth::price;
     #[test_only]
-    use pyth::i64;
+    use suilend_pyth::i64;
 
     const MAGIC: u64 = 0x50325748; // "P2WH" (Pyth2Wormhole) raw ASCII bytes
     const E_INVALID_ATTESTATION_MAGIC_VALUE: u64 = 0;
@@ -136,9 +136,9 @@ module pyth::batch_price_attestation {
 
         // If status is trading, use the current price.
         // If not, use the the last known trading price.
-        let current_price = pyth::price::new(price, conf, expo, publish_time);
+        let current_price = suilend_pyth::price::new(price, conf, expo, publish_time);
         if (status != price_status::new_trading()) {
-            current_price = pyth::price::new(prev_price, prev_conf, expo, prev_publish_time);
+            current_price = suilend_pyth::price::new(prev_price, prev_conf, expo, prev_publish_time);
         };
 
         // If status is trading, use the timestamp of the aggregate as the timestamp for the
@@ -155,7 +155,7 @@ module pyth::batch_price_attestation {
             price_feed::new(
                 price_identifier,
                 current_price,
-                pyth::price::new(ema_price, ema_conf, expo, ema_timestamp),
+                suilend_pyth::price::new(ema_price, ema_conf, expo, ema_timestamp),
             )
         )
     }

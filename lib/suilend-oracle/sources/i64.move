@@ -1,5 +1,5 @@
-module pyth::i64 {
-    //use pyth::error;
+module suilend_pyth::i64 {
+    //use suilend_pyth::error;
 
     const MAX_POSITIVE_MAGNITUDE: u64 = (1 << 63) - 1;
     const MAX_NEGATIVE_MAGNITUDE: u64 = (1 << 63);

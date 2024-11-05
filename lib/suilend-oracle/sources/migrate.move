@@ -10,12 +10,12 @@
 /// Included in migration is the ability to ensure that breaking changes for
 /// any of Pyth's methods by enforcing the current build version as
 /// their required minimum version.
-module pyth::migrate {
+module suilend_pyth::migrate {
     use sui::object::{ID};
 
-    use pyth::state::{Self, State};
-    use pyth::contract_upgrade::{Self};
-    use pyth::governance::{WormholeVAAVerificationReceipt};
+    use suilend_pyth::state::{Self, State};
+    use suilend_pyth::contract_upgrade::{Self};
+    use suilend_pyth::governance::{WormholeVAAVerificationReceipt};
 
     struct MigrateComplete has drop, copy {
         package: ID

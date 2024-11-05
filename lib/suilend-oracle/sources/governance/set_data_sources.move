@@ -1,15 +1,15 @@
-module pyth::set_data_sources {
+module suilend_pyth::set_data_sources {
     use std::vector;
 
     use wormhole::cursor;
     use wormhole::external_address::{Self};
     use wormhole::bytes32::{Self};
 
-    use pyth::deserialize;
-    use pyth::data_source::{Self, DataSource};
-    use pyth::state::{Self, State, LatestOnly};
+    use suilend_pyth::deserialize;
+    use suilend_pyth::data_source::{Self, DataSource};
+    use suilend_pyth::state::{Self, State, LatestOnly};
 
-    friend pyth::governance;
+    friend suilend_pyth::governance;
 
     struct DataSources {
         sources: vector<DataSource>,
@@ -48,16 +48,16 @@ module pyth::set_data_sources {
 }
 
 #[test_only]
-module pyth::set_data_sources_tests {
+module suilend_pyth::set_data_sources_tests {
     use sui::test_scenario::{Self};
     use sui::coin::Self;
 
     use wormhole::external_address::{Self};
     use wormhole::bytes32::{Self};
 
-    use pyth::pyth_tests::{Self, setup_test, take_wormhole_and_pyth_states};
-    use pyth::state::Self;
-    use pyth::data_source::Self;
+    use suilend_pyth::pyth_tests::{Self, setup_test, take_wormhole_and_pyth_states};
+    use suilend_pyth::state::Self;
+    use suilend_pyth::data_source::Self;
 
     const SET_DATA_SOURCES_VAA: vector<u8> = x"01000000000100b29ee59868b9066b04d8d59e1c7cc66f0678eaf4c58b8c87e4405d6de615f64b04da4025719aeed349e03900f37829454d62cc7fc7bca80328c31fe40be7b21b010000000000000000000163278d271099bfd491951b3e648f08b1c71631e4a53674ad43e8f9f98068c3850000000000000001015054474d0102001503001ae101faedac5851e32b9b23b5f9411a8c2bac4aae3ed4dd7b811dd1a72ea4aa71001aa27839d641b07743c0cb5f68c51f8cd31d2c0762bec00dc6fcd25433ef1ab5b60001f346195ac02f37d60d4db8ffa6ef74cb1be3550047543a4a9ee9acf4d78697b0";
     // VAA Info:
@@ -78,11 +78,11 @@ module pyth::set_data_sources_tests {
 
         let verified_vaa = wormhole::vaa::parse_and_verify(&mut worm_state, SET_DATA_SOURCES_VAA, &clock);
 
-        let receipt = pyth::governance::verify_vaa(&pyth_state, verified_vaa);
+        let receipt = suilend_pyth::governance::verify_vaa(&pyth_state, verified_vaa);
 
         test_scenario::next_tx(&mut scenario, DEPLOYER);
 
-        pyth::governance::execute_governance_instruction(&mut pyth_state, receipt);
+        suilend_pyth::governance::execute_governance_instruction(&mut pyth_state, receipt);
 
         test_scenario::next_tx(&mut scenario, DEPLOYER);
 

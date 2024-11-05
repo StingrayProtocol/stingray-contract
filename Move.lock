@@ -2,11 +2,12 @@
 
 [move]
 version = 3
-manifest_digest = "667D1CA3890290399FB8318005259E7EF24E0D5A4362891E81E58659549645FA"
-deps_digest = "CAFAD8A7CF51067FB4358215BECB86BD100DD64E57C2AC8A7AE7D74B688F5965"
+manifest_digest = "EDFFB99E7863CF600E25C2C30108A71906F04DC751418421459D6AA32997E7D8"
+deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
 dependencies = [
   { id = "BucketProtocol", name = "BucketProtocol" },
   { id = "CetusClmm", name = "CetusClmm" },
+  { id = "Flask", name = "Flask" },
   { id = "ScallopProtocol", name = "ScallopProtocol" },
   { id = "Sui", name = "Sui" },
   { id = "fountain", name = "fountain" },
@@ -16,19 +17,32 @@ dependencies = [
 
 [[move.package]]
 id = "BucketFramework"
-source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "without-oracle", subdir = "framework" }
+source = { local = "lib/framework" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
 [[move.package]]
+id = "BucketOracle"
+source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "" }
+
+dependencies = [
+  { id = "Pyth", name = "Pyth" },
+  { id = "Sui", name = "Sui" },
+  { id = "SupraOracle", name = "SupraOracle" },
+  { id = "SwitchboardStdLib", name = "SwitchboardStdLib" },
+]
+
+[[move.package]]
 id = "BucketProtocol"
-source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "without-oracle", subdir = "bucket-protocol" }
+source = { local = "lib/bucket-protocol" }
 
 dependencies = [
   { id = "BucketFramework", name = "BucketFramework" },
+  { id = "BucketOracle", name = "BucketOracle" },
   { id = "Flask", name = "Flask" },
+  { id = "Sui", name = "Sui" },
 ]
 
 [[move.package]]
@@ -51,7 +65,7 @@ dependencies = [
 
 [[move.package]]
 id = "Flask"
-source = { git = "https://github.com/Sparkling-Finance/contract.git", rev = "sbuck", subdir = "flask" }
+source = { local = "lib/flask" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -87,7 +101,7 @@ source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainn
 
 [[move.package]]
 id = "Pyth"
-source = { git = "https://github.com/solendprotocol/pyth-crosschain.git", rev = "98e218c64bb75cf1350eb7b021e1ffcc3aedfd62", subdir = "target_chains/sui/contracts" }
+source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/pyth" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -116,6 +130,40 @@ dependencies = [
 ]
 
 [[move.package]]
+id = "SuilendPyth"
+source = { local = "lib/suilend-oracle" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+  { id = "SuilendWormhole", name = "SuilendWormhole" },
+]
+
+[[move.package]]
+id = "SuilendWormhole"
+source = { local = "lib/suilend-wormhole" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
+id = "SupraOracle"
+source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/supra" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
+id = "SwitchboardStdLib"
+source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/switchboard" }
+
+dependencies = [
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
 id = "Whitelist"
 source = { local = "lib/scallop/libs/whitelist" }
 
@@ -125,7 +173,7 @@ dependencies = [
 
 [[move.package]]
 id = "Wormhole"
-source = { git = "https://github.com/solendprotocol/wormhole.git", rev = "e1698d3c72b15cdddd7da98ad43e151f83b72a0a", subdir = "sui/wormhole" }
+source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet", subdir = "partners/pyth/wormhole" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -147,9 +195,14 @@ dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
+[move.toolchain-version]
+compiler-version = "1.35.0"
+edition = "2024.beta"
+flavor = "sui"
+
 [[move.package]]
 id = "fountain"
-source = { git = "https://github.com/Fountain-Fi/contract", rev = "main", subdir = "fountain" }
+source = { local = "lib/fountain" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -157,11 +210,11 @@ dependencies = [
 
 [[move.package]]
 id = "suilend"
-source = { git = "https://github.com/solendprotocol/suilend.git", rev = "mainnet", subdir = "contracts/suilend" }
+source = { local = "lib/suilend" }
 
 dependencies = [
-  { id = "Pyth", name = "Pyth" },
   { id = "Sui", name = "Sui" },
+  { id = "SuilendPyth", name = "SuilendPyth" },
 ]
 
 [[move.package]]
@@ -171,8 +224,3 @@ source = { local = "lib/suins" }
 dependencies = [
   { id = "Sui", name = "Sui" },
 ]
-
-[move.toolchain-version]
-compiler-version = "1.35.0"
-edition = "2024.beta"
-flavor = "sui"

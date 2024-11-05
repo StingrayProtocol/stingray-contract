@@ -1,12 +1,12 @@
-module pyth::governance {
-    use pyth::governance_instruction;
-    use pyth::governance_action;
-    use pyth::set_governance_data_source;
-    use pyth::set_data_sources;
-    use pyth::set_stale_price_threshold;
-    use pyth::set_fee_recipient;
-    use pyth::state::{Self, State};
-    use pyth::set_update_fee;
+module suilend_pyth::governance {
+    use suilend_pyth::governance_instruction;
+    use suilend_pyth::governance_action;
+    use suilend_pyth::set_governance_data_source;
+    use suilend_pyth::set_data_sources;
+    use suilend_pyth::set_stale_price_threshold;
+    use suilend_pyth::set_fee_recipient;
+    use suilend_pyth::state::{Self, State};
+    use suilend_pyth::set_update_fee;
 
     use wormhole::vaa::{Self, VAA};
     use wormhole::bytes32::Bytes32;
@@ -50,11 +50,11 @@ module pyth::governance {
     ): WormholeVAAVerificationReceipt {
         state::assert_latest_only(pyth_state);
 
-        let vaa_data_source = pyth::data_source::new((vaa::emitter_chain(&verified_vaa) as u64), vaa::emitter_address(&verified_vaa));
+        let vaa_data_source = suilend_pyth::data_source::new((vaa::emitter_chain(&verified_vaa) as u64), vaa::emitter_address(&verified_vaa));
 
         // The emitter chain and address must correspond to the Pyth governance emitter chain and contract.
         assert!(
-            pyth::state::is_valid_governance_data_source(pyth_state, vaa_data_source),
+            suilend_pyth::state::is_valid_governance_data_source(pyth_state, vaa_data_source),
             E_INVALID_GOVERNANCE_DATA_SOURCE
         );
 
