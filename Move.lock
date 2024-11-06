@@ -2,7 +2,7 @@
 
 [move]
 version = 3
-manifest_digest = "2AF30A1CA8306EF69A0BDF8D8D6590CFF94A1CAD2416561F7EA6E81769B1EF20"
+manifest_digest = "EDFFB99E7863CF600E25C2C30108A71906F04DC751418421459D6AA32997E7D8"
 deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
 dependencies = [
   { id = "BucketProtocol", name = "BucketProtocol" },
@@ -17,7 +17,7 @@ dependencies = [
 
 [[move.package]]
 id = "BucketFramework"
-source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "test", subdir = "framework" }
+source = { local = "lib/framework" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -25,15 +25,18 @@ dependencies = [
 
 [[move.package]]
 id = "BucketOracle"
-source = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "test-only", subdir = "" }
+source = { local = "lib/bucket-oracle" }
 
 dependencies = [
+  { id = "Pyth", name = "Pyth" },
   { id = "Sui", name = "Sui" },
+  { id = "SupraOracle", name = "SupraOracle" },
+  { id = "SwitchboardStdLib", name = "SwitchboardStdLib" },
 ]
 
 [[move.package]]
 id = "BucketProtocol"
-source = { git = "https://github.com/Bucket-Protocol/bucket-interface.git", rev = "test", subdir = "bucket-protocol" }
+source = { local = "lib/bucket-protocol" }
 
 dependencies = [
   { id = "BucketFramework", name = "BucketFramework" },
@@ -62,7 +65,7 @@ dependencies = [
 
 [[move.package]]
 id = "Flask"
-source = { git = "https://github.com/Sparkling-Finance/contract.git", rev = "main", subdir = "flask" }
+source = { local = "lib/flask" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -98,7 +101,7 @@ source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainn
 
 [[move.package]]
 id = "Pyth"
-source = { git = "https://github.com/solendprotocol/pyth-crosschain.git", rev = "98e218c64bb75cf1350eb7b021e1ffcc3aedfd62", subdir = "target_chains/sui/contracts" }
+source = { local = "lib/bucket-oracle/partners/pyth" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -127,6 +130,32 @@ dependencies = [
 ]
 
 [[move.package]]
+id = "SuilendPyth"
+source = { local = "lib/suilend-oracle" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+  { id = "Wormhole", name = "Wormhole" },
+]
+
+[[move.package]]
+id = "SupraOracle"
+source = { local = "lib/bucket-oracle/partners/supra" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
+id = "SwitchboardStdLib"
+source = { local = "lib/bucket-oracle/partners/switchboard" }
+
+dependencies = [
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
 id = "Whitelist"
 source = { local = "lib/scallop/libs/whitelist" }
 
@@ -134,11 +163,9 @@ dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
-[env]
-
 [[move.package]]
 id = "Wormhole"
-source = { git = "https://github.com/solendprotocol/wormhole.git", rev = "e1698d3c72b15cdddd7da98ad43e151f83b72a0a", subdir = "sui/wormhole" }
+source = { local = "lib/wormhole" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -160,28 +187,30 @@ dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
+[env]
+
 [[move.package]]
 id = "fountain"
-source = { git = "https://github.com/Fountain-Fi/contract", rev = "main", subdir = "fountain" }
+source = { local = "lib/fountain" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
 ]
-
-[env.testnet]
-chain-id = "4c78adac"
-original-published-id = "0x128c56bc4c4ae69d1fa1addb5f8861d59cc677a3e7d390a7293a5de9cccced69"
-latest-published-id = "0x128c56bc4c4ae69d1fa1addb5f8861d59cc677a3e7d390a7293a5de9cccced69"
-published-version = "1"
 
 [[move.package]]
 id = "suilend"
-source = { git = "https://github.com/solendprotocol/suilend.git", rev = "mainnet", subdir = "contracts/suilend" }
+source = { local = "lib/suilend" }
 
 dependencies = [
-  { id = "Pyth", name = "Pyth" },
   { id = "Sui", name = "Sui" },
+  { id = "SuilendPyth", name = "SuilendPyth" },
 ]
+
+[env.mainnet]
+chain-id = "35834a8a"
+original-published-id = "0xcacda721d0073c451b0df93ebc4be2c8f8f2413dbcccbbe21ca7648969c48ef8"
+latest-published-id = "0xcacda721d0073c451b0df93ebc4be2c8f8f2413dbcccbbe21ca7648969c48ef8"
+published-version = "1"
 
 [[move.package]]
 id = "suins"

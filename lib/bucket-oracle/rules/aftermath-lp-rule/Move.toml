@@ -1,0 +1,12 @@
+[package]
+name = "AftermathLpRule"
+version = "0.0.1"
+published-at = "0x928ff0be132d9bad7926008780d2a5adfefa1a24559a567dafbfd267d1b1b294"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+BucketOracle = { git = "https://github.com/Bucket-Protocol/oracle.git", rev = "mainnet" }
+AftermathAmm = { local = "../../partners/aftermath-interfaces/packages/amm/amm" }
+
+[addresses]
+aftermath_lp_rule = "0x928ff0be132d9bad7926008780d2a5adfefa1a24559a567dafbfd267d1b1b294"

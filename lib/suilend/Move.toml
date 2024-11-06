@@ -1,0 +1,19 @@
+[package]
+name = "suilend"
+version = "0.0.1"
+published-at = "0x93b70b8e21d77f695507558839715d900d05e0ee54acf25d176a179112001d7a"
+edition = "legacy"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+override = true
+ 
+[dependencies.SuilendPyth]
+local="../suilend-oracle"
+
+[addresses]
+sui = "0x2"
+# suilend = "0x0"
+suilend = "0xf95b06141ed4a174f239417323bde3f209b972f5930d8521ea38a52aff3a6ddf"
