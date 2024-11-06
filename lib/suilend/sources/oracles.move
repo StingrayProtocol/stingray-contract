@@ -1,11 +1,11 @@
 /// This module contains logic for parsing pyth prices (and eventually switchboard prices)
 module suilend::oracles {
-    use pyth::price_info::{Self, PriceInfoObject};
-    use pyth::price_feed::{Self};
+    use suilend_pyth::price_info::{Self, PriceInfoObject};
+    use suilend_pyth::price_feed::{Self};
     use std::vector::{Self};
-    use pyth::price_identifier::{PriceIdentifier, Self};
-    use pyth::price::{Self, Price};
-    use pyth::i64::{Self};
+    use suilend_pyth::price_identifier::{PriceIdentifier, Self};
+    use suilend_pyth::price::{Self, Price};
+    use suilend_pyth::i64::{Self};
     use suilend::decimal::{Decimal, Self, mul, div};
     use sui::math::{Self};
     use std::option::{Self, Option};

@@ -1,10 +1,10 @@
 #[test_only]
 module suilend::mock_pyth {
-    use pyth::price_info::{Self, PriceInfoObject};
-    use pyth::price_feed::{Self};
-    use pyth::price::{Self};
-    use pyth::price_identifier::{Self};
-    use pyth::i64::{Self};
+    use suilend_pyth::price_info::{Self, PriceInfoObject};
+    use suilend_pyth::price_feed::{Self};
+    use suilend_pyth::price::{Self};
+    use suilend_pyth::price_identifier::{Self};
+    use suilend_pyth::i64::{Self};
     use sui::tx_context::{TxContext};
     use std::vector::{Self};
     use sui::object::{Self, UID};

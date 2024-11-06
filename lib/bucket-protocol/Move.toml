@@ -12,7 +12,8 @@ version = "0.6.0"
 # published-at = "0x8573a39b0d5f21d7e0bbee317851c3ac27536d3649426735493e890805034274"
 # published-at = "0x0c592cdefe5ad2d062b128b6a097983e9c40a742c50abb867a5821714a628457"
 # published-at = "0x0275217e283b408b60adc2ca5f842df3e59fb71e06ee79f07b4eb989141f91d3"
-published-at = "0xb71c0893203d0f59622fc3fac849d0833de559d7503af21c5daf880d60d754ed"
+# published-at = "0xb71c0893203d0f59622fc3fac849d0833de559d7503af21c5daf880d60d754ed"
+published-at = "0x12710463dd7dfce317273831a2782055225aec0634c21b3cdfd4fb20ae3c9e13"
 # license = ""           # e.g., "MIT", "GPL", "Apache 2.0"
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
 

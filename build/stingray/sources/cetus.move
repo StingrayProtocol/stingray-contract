@@ -1,6 +1,11 @@
 module stingray::cetus{
     use sui::clock::Clock;
     use sui::balance::{Self, Balance};
+    use sui::event::{Self};
+    use std::{
+        type_name::{Self, TypeName},
+        string::{Self, String},
+    };
 
     use cetus_clmm::config::GlobalConfig;
     use cetus_clmm::pool::{Self, Pool};
@@ -8,6 +13,14 @@ module stingray::cetus{
     use stingray::{
         fund:: { Take_1_Liquidity_For_1_Liquidity_Request,},
     };
+
+    public struct Swap has copy, drop{
+        protocol: String,
+        input_coin_type: TypeName,
+        input_amount: u64,
+        output_coin_type: TypeName,
+        output_amount: u64,
+    }
     
     // To be noted: This function doesn't take care of slippage
     // To swap CoinX for CoinY, input the coin you are swapping in one of the args, and input zero balance for the coin you want to receive.
@@ -21,6 +34,17 @@ module stingray::cetus{
         by_amount_in: bool,
         clock: &Clock,
     ){
+        let input_amount;
+        let input_coin_type;
+        
+        if (input_x.value() == 0){
+            input_amount = input_y.value();
+            input_coin_type =type_name::get<Y>();
+        }else{
+            input_amount = input_x.value();
+            input_coin_type =type_name::get<X>();
+        };
+
         let amount = if(by_amount_in) input_x.value() else input_y.value();
         let sqrt_price_limit = if(x2y) 4295048016_u128 else 79226673515401279992447579055_u128;
         let (receive_x, receive_y, flash_receipt) = pool::flash_swap<X, Y>(
@@ -55,7 +79,28 @@ module stingray::cetus{
         input_x.join(receive_x);
         input_y.join(receive_y);
 
-        request.supported_defi_confirm_1l_for_1l(input_y.value())
+        request.supported_defi_confirm_1l_for_1l(input_y.value());
+
+        let output_amount;
+        let output_coin_type;
+        
+        if (input_x.value() == 0){
+            output_amount = input_y.value();
+            output_coin_type =type_name::get<Y>();
+        }else{
+            output_amount = input_x.value();
+            output_coin_type =type_name::get<X>();
+        };
+        
+        event::emit(Swap{
+            protocol: string::utf8(b"Cetus"),
+            input_coin_type,
+            input_amount,
+            output_coin_type,
+            output_amount,
+            } 
+        );
+
     }
 
     public fun take_zero_balance<CoinType>(): Balance<CoinType>{

@@ -14,8 +14,8 @@ module suilend::reserve {
     use sui::clock::{Self, Clock};
     use sui::coin::{Self, CoinMetadata};
     use sui::math::{Self};
-    use pyth::price_identifier::{PriceIdentifier};
-    use pyth::price_info::{PriceInfoObject};
+    use suilend_pyth::price_identifier::{PriceIdentifier};
+    use suilend_pyth::price_info::{PriceInfoObject};
     use suilend::reserve_config::{
         Self, 
         ReserveConfig, 
@@ -802,7 +802,7 @@ module suilend::reserve {
     }
 
     #[test_only]
-    use pyth::price_identifier::{Self};
+    use suilend_pyth::price_identifier::{Self};
 
     #[test_only]
     fun example_price_identifier(): PriceIdentifier {

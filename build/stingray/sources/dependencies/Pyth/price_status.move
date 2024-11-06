@@ -13,9 +13,9 @@ module pyth::price_status {
     }
 
     public fun from_u64(status: u64): PriceStatus {
-        assert!(status <= TRADING, 0);
+        assert!(status <= TRADING, 0); // error::invalid_price_status()
         PriceStatus {
-            status
+            status: status
         }
     }
 

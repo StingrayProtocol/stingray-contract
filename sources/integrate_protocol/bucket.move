@@ -2,6 +2,10 @@ module stingray::bucket{
     use sui::balance::Balance;
     use sui::sui::SUI;
     use sui::clock::Clock;
+    use sui::event::{Self};
+
+    use std::string::{Self, String};
+    use std::type_name::{Self, TypeName,};
     
     use flask::sbuck::{SBUCK, Flask};
     use fountain::fountain_core::{Self as fountain, Fountain, StakeProof};
@@ -14,6 +18,20 @@ module stingray::bucket{
             },
     };
 
+    public struct Deposited has copy, drop{
+        protocol: String,
+        coin_type: TypeName,
+        amount: u64,
+    }
+
+    public struct Withdrawed has copy, drop{
+        protocol: String,
+        coin_type1: TypeName,
+        amount1: u64,
+        coin_type2: TypeName,
+        amount2: u64,
+    }
+
     // 1. Deposit BUCK in exchange for sBUCK
     // 2. stake sBUCK to earn SUI rewards 
     public fun deposit(
@@ -25,10 +43,20 @@ module stingray::bucket{
         clock: &Clock,
         ctx: &mut TxContext
     ):StakeProof<SBUCK, SUI>{
+        let buck_amount= buck.value();
         let sbuck = bucket_protocol.buck_to_sbuck(flask, clock, buck);  
         let (_, max_lock_time) = fountain.get_lock_time_range();
         let share = fountain::stake(clock, fountain, sbuck, max_lock_time, ctx);
         request.supported_defi_confirm_1l_for_1nl(share.get_proof_stake_amount());
+
+        event::emit(
+            Deposited{
+                protocol: string::utf8(b"Bucket"),
+                coin_type: type_name::get<BUCK>(),
+                amount: buck_amount,
+            }
+        );
+
         share
     }
 
@@ -44,6 +72,16 @@ module stingray::bucket{
         let buck = buck::sbuck_to_buck(bucket_protocol, flask, clock, sbuck);
         
         request.supported_defi_confirm_1nl_for_2l(buck.value(), reward_bal.value());
+
+        event::emit(
+            Withdrawed{
+                protocol: string::utf8(b"Bucket"),
+                coin_type1: type_name::get<BUCK>(),
+                amount1: buck.value(),
+                coin_type2: type_name::get<SUI>(),
+                amount2: reward_bal.value(),
+            }
+        );
         
         (buck, reward_bal)
     }

@@ -103,7 +103,7 @@ module stingray::trader{
     public entry fun mint(
         config: &mut GlobalConfig,
         controller: &mut HostController,
-        sui_ns: SuinsRegistration,
+        // sui_ns: SuinsRegistration,
         pfp_img: String, // blob id 
         card_img: String, // blob id 
         coin: Coin<SUI>,
@@ -113,33 +113,33 @@ module stingray::trader{
 
         config::assert_if_version_not_matched(config, VERSION);
         let balance = coin.into_balance();
-        assert_if_ns_expired_by_ns(&sui_ns, clock);
+        //assert_if_ns_expired_by_ns(&sui_ns, clock);
         assert_if_balance_not_matched(controller, &balance );
 
-        let first_name = *sui_ns.domain().sld();
-        let last_name =  *sui_ns.domain().tld();
+        // let first_name = *sui_ns.domain().sld();
+        // let last_name =  *sui_ns.domain().tld();
         
-        let mut name = string::utf8(b"");
-        name.append( first_name);
-        name.append(last_name);
+        // let mut name = string::utf8(b"");
+        // name.append( first_name);
+        // name.append(last_name);
 
-        let mut trader = Trader{
+        let trader = Trader{
             id: object::new(ctx),
-            first_name, 
-            last_name,
+            first_name: string::utf8(b""),// first_name
+            last_name: string::utf8(b""),// last_name,
             card_img,
             pfp_img,
             birth: clock.timestamp_ms(),
         };
         
-        dof::add<Name, SuinsRegistration>(&mut trader.id, Name{}, sui_ns);
+        // dof::add<Name, SuinsRegistration>(&mut trader.id, Name{}, sui_ns);
         controller.balance.join(balance);
 
         event::emit( 
             Mint{
                 trader_id: *trader.id.as_inner(),
-                new_first_name: first_name,
-                new_last_name: last_name,
+                new_first_name: string::utf8(b""),//first_name
+                new_last_name: string::utf8(b""),//last_name
             }
         );
 
@@ -305,5 +305,13 @@ module stingray::trader{
         name.append(trader.last_name);
         transfer::public_transfer(ns, ctx.sender())
     } 
+
+
+    #[test_only]
+    public(package) fun test_init(
+        ctx: &mut TxContext
+    ){
+        init(TRADER{}, ctx);
+    }
 
 }

@@ -1,13 +1,13 @@
-module pyth::accumulator {
+module suilend_pyth::accumulator {
     use std::vector::{Self};
     use sui::clock::{Clock, Self};
     use wormhole::bytes20::{Self, Bytes20};
     use wormhole::cursor::{Self, Cursor};
-    use pyth::deserialize::{Self};
-    use pyth::price_identifier::{Self};
-    use pyth::price_info::{Self, PriceInfo};
-    use pyth::price_feed::{Self};
-    use pyth::merkle_tree::{Self};
+    use suilend_pyth::deserialize::{Self};
+    use suilend_pyth::price_identifier::{Self};
+    use suilend_pyth::price_info::{Self, PriceInfo};
+    use suilend_pyth::price_feed::{Self};
+    use suilend_pyth::merkle_tree::{Self};
 
     const PRICE_FEED_MESSAGE_TYPE: u64 = 0;
     const E_INVALID_UPDATE_DATA: u64 = 245;
@@ -22,9 +22,9 @@ module pyth::accumulator {
     const MINIMUM_SUPPORTED_MINOR_VERSION: u8 = 0;
     const MAJOR_VERSION: u8 = 1;
 
-    friend pyth::pyth;
+    friend suilend_pyth::pyth;
     #[test_only]
-    friend pyth::pyth_tests;
+    friend suilend_pyth::pyth_tests;
 
     // parse_and_verify_accumulator_message verifies that the price updates encoded in the
     // accumulator message (accessed via cursor) belong to the merkle tree defined by the merkle root encoded in
@@ -91,8 +91,8 @@ module pyth::accumulator {
             clock::timestamp_ms(clock) / 1000,
             price_feed::new(
                 price_identifier,
-                pyth::price::new(price, conf, expo, publish_time),
-                pyth::price::new(ema_price, ema_conf, expo, publish_time),
+                suilend_pyth::price::new(price, conf, expo, publish_time),
+                suilend_pyth::price::new(ema_price, ema_conf, expo, publish_time),
             )
         );
         price_info

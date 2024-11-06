@@ -13,6 +13,7 @@ module stingray::config{
         min_rewards: u64,
         settle_percentage: u64,
         base_percentage: u64,
+        platform_fee: u64,
         platform: address,
     }
 
@@ -29,12 +30,13 @@ module stingray::config{
         let config = GlobalConfig{
             id: object::new(ctx),
             version: 1u64,
-            max_trader_fee: 20,
+            max_trader_fee: 2000,
             min_fund_base: 100000000,
             max_fund_base: 500000000,
             min_rewards: 1000000,
             settle_percentage: 100,
             base_percentage: 10000,
+            platform_fee: 200,
             platform: @0x39dfa26ecaf49a466cfe33b2e98de9b46425eec170e59eb40d3f69d061a67778,
         };
 
@@ -81,10 +83,24 @@ module stingray::config{
         config.max_fund_base = new_fund_base;
     }
 
+    public fun update_platform_fee(
+        _: &AdminCap,
+        config: &mut GlobalConfig,
+        new_platform_fee: u64,
+    ){
+        config.platform_fee = new_platform_fee;
+    }
+
     public(package) fun max_trader_fee(
         config: &GlobalConfig,
     ): u64{
         config.max_trader_fee
+    }
+
+    public(package) fun platform_fee(
+        config: &GlobalConfig,
+    ): u64{
+         config.platform_fee
     }
 
     public(package) fun min_rewards(
@@ -142,5 +158,12 @@ module stingray::config{
         input_base_amount: u64,
     ){
         assert!(config.min_fund_base() <= input_base_amount, ELessThanMinAsset);
+    }
+
+    #[test_only]
+    public(package) fun test_init(
+        ctx: &mut TxContext
+    ){
+        init( ctx);
     }
 }

@@ -10,10 +10,11 @@ module stingray::fund{
         bag::{Self, Bag},
         table::{Self, Table},
         clock::{Clock},
+        event::{Self,},
     };
 
     use stingray::{
-        config::{Self, GlobalConfig},
+        config::{Self, GlobalConfig, AdminCap},
         trader::{Trader},
         fund_share::{Self, MintRequest, FundShare},
     };
@@ -41,30 +42,36 @@ module stingray::fund{
     
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
+        fund: ID,
         take_amount: u64,
         put_amount: u64,
     }
     public struct Take_1_Liquidity_For_2_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType1, phantom PutCoinType2>{
+        fund: ID,
         take_amount: u64,
         put_amount1: u64,
         put_amount2: u64,
     }
     
     public struct Take_1_Liquidity_For_1_NonLiquidity_Request<phantom TakeCoinType, phantom PutAsset>{
+        fund: ID,
         take_amount: u64,
         put_amount: u64,
     }
     
     public struct Take_1_Liquidity_1_NonLiquidity_For_1_NonLiquidity_Request<phantom TakeCoinType, phantom TakeAsset, phantom PutAsset>{
+        fund: ID,
         take_amount1: u64,
         take_amount2: u64,
         put_amount: u64,
     }
     public struct Take_1_NonLiquidity_For_1_Liquidity_Request<phantom TakeAsset, phantom PutCoinType>{
+        fund: ID,
         take_amount: u64,
         put_amount: u64,
     }
     public struct Take_1_NonLiquidity_For_2_Liquidity_Request<phantom TakeAsset, phantom PutCoinType1, phantom PutCoinType2>{
+        fund: ID,
         take_amount: u64,
         put_amount1: u64,
         put_amount2: u64,
@@ -98,7 +105,6 @@ module stingray::fund{
         description: String,
         trader: ID,
         trader_fee: u64,
-        trader_stake: u64,
         asset: InvestRecord,
         base: u64,
         time: TimeInfo,
@@ -106,6 +112,40 @@ module stingray::fund{
         is_settle: bool,
         share_info: ShareInfo,
         after_amount: u64,
+    }
+
+    public struct CreatedFund has copy, drop {
+        id: ID,
+        description: String, 
+        trader: ID,
+        trader_fee: u64,
+        trader_stake: u64,
+        start_time: u64,
+        invest_duration: u64,
+        end_time: u64,
+        is_arena: bool,
+    }
+
+    public struct Settled has copy, drop{
+        fund: ID,
+        is_finished: bool,
+    }
+
+    public struct Invested<phantom CoinType> has copy, drop{
+        investor: address, 
+        fund: ID,
+        amount: u64,
+    }
+
+    public struct TraderClaimed<phantom CoinType> has copy, drop{
+        trader: ID,
+        receiver: address,
+        amount: u64,
+    }
+
+    public struct Claimed<phantom CoinType> has copy, drop{
+        receiver: address,
+        amount: u64,
     }
 
     // create fund
@@ -120,7 +160,7 @@ module stingray::fund{
         end_time: u64,
         coin: Coin<FundCoinType>,
         ctx: &mut TxContext,
-    ): Fund<FundCoinType>{
+    ): (Fund<FundCoinType>, MintRequest<FundCoinType>){
 
         let init_amount = coin.value();
 
@@ -146,7 +186,6 @@ module stingray::fund{
             description,
             trader: trader.id(),
             trader_fee,
-            trader_stake: init_amount,
             asset: investRecord,
             base: init_amount,
             time: TimeInfo{
@@ -163,11 +202,48 @@ module stingray::fund{
             after_amount: 0,
         };
 
-        fund
+        event::emit(
+            CreatedFund{
+                id: *fund.id.as_inner(),
+                description,
+                trader: trader.id(),
+                trader_fee,
+                trader_stake: init_amount,
+                start_time,
+                invest_duration,
+                end_time,
+                is_arena,
+            }
+        );
+
+        event::emit(
+            Invested<FundCoinType>{
+                investor: ctx.sender(), 
+                fund: *fund.id.as_inner(),
+                amount: init_amount,
+            }
+        );
+
+        // take mint share request
+        let mut fund_type = string::utf8(b"Common");
+        
+        if (fund.is_arena){
+            fund_type=string::utf8(b"Arena");
+        };
+
+        let share_request = fund_share::create_mint_request(
+            config,
+            *fund.id.as_inner(), 
+            fund.trader, 
+            fund_type, 
+            init_amount, 
+            fund.time.end_time);
+
+        (fund, share_request)
     }
 
-    public fun to_share_object<FunCoinType>(
-        fund: Fund<FunCoinType>,
+    public fun to_share_object<FundCoinType>(
+        fund: Fund<FundCoinType>,
     ){
         transfer::share_object(fund);
     }
@@ -178,6 +254,7 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
         invest_coin: Coin<FundCoinType>,
         clock: &Clock,
+        ctx: &mut TxContext,
     ): MintRequest<FundCoinType>{
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_over_invest_duration(fund, clock);
@@ -189,7 +266,7 @@ module stingray::fund{
 
         // put coin into asset bag
         let asset_type = type_name::get<Balance<FundCoinType>>();
-        fund.asset.assets.add<TypeName, Balance<FundCoinType>>(asset_type, invest_coin.into_balance());
+        fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(asset_type).join( invest_coin.into_balance());
 
         // take mint share request
         let mut fund_type = string::utf8(b"Common");
@@ -197,6 +274,14 @@ module stingray::fund{
         if (fund.is_arena){
             fund_type=string::utf8(b"Arena");
         };
+
+        event::emit(
+            Invested<FundCoinType>{
+                investor: ctx.sender(), 
+                fund: *fund.id.as_inner(),
+                amount: invest_amount,
+            }
+        );
 
         fund_share::create_mint_request(
             config,
@@ -206,6 +291,8 @@ module stingray::fund{
             invest_amount, 
             fund.time.end_time)
     }
+
+    // cancel_invest ... to be continue
 
     // take asset function , i.e scallop deposit, cetus swap
     public fun take_1_liquidity_for_1_liquidity< TakeCoinType, PutCoinType, FundCoinType>(
@@ -224,6 +311,7 @@ module stingray::fund{
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
         let take_balance = total_balance.split(amount);
         let take_request = Take_1_Liquidity_For_1_Liquidity_Request<TakeCoinType, PutCoinType>{
+            fund: *fund.id().as_inner(),
             take_amount: take_balance.value(),
             put_amount: 0,
         };
@@ -247,6 +335,7 @@ module stingray::fund{
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
         let take_balance = total_balance.split(amount);
         let take_request = Take_1_Liquidity_For_2_Liquidity_Request<TakeCoinType, PutCoinType1, PutCoinType2>{
+            fund: *fund.id().as_inner(),
             take_amount: take_balance.value(),
             put_amount1: 0,
             put_amount2: 0,
@@ -271,6 +360,7 @@ module stingray::fund{
         let take_balance = total_balance.split(amount);
         
         let take_request = Take_1_Liquidity_For_1_NonLiquidity_Request<TakeCoinType, PutAsset>{
+            fund: *fund.id().as_inner(),
             take_amount: take_balance.value(),
             put_amount: 0,
         };
@@ -296,6 +386,7 @@ module stingray::fund{
         let take_asset = fund.asset.assets.remove<TypeName, TakeAsset>(type_name::get<TakeAsset>());
         
         let take_request = Take_1_Liquidity_1_NonLiquidity_For_1_NonLiquidity_Request<TakeCoinType,TakeAsset, PutAsset>{
+            fund: *fund.id().as_inner(),
             take_amount1: take_balance.value(),
             take_amount2: 1,
             put_amount: 0,
@@ -318,6 +409,7 @@ module stingray::fund{
         let take_asset = fund.asset.assets.remove<TypeName, TakeAsset>(type_name::get<TakeAsset>());
         
         let take_request = Take_1_NonLiquidity_For_1_Liquidity_Request<TakeAsset,PutCoinType>{
+            fund: *fund.id().as_inner(),
             take_amount: 1,
             put_amount: 0,
         };
@@ -338,6 +430,7 @@ module stingray::fund{
         let take_asset = fund.asset.assets.remove<TypeName, TakeAsset>(type_name::get<TakeAsset>());
         
         let take_request = Take_1_NonLiquidity_For_2_Liquidity_Request<TakeAsset,PutCoinType1, PutCoinType2>{
+            fund: *fund.id().as_inner(),
             take_amount: 1,
             put_amount1: 0,
             put_amount2: 0,
@@ -357,6 +450,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_For_1_Liquidity_Request{
+            fund:_,
             take_amount: _,
             put_amount,
         } = request;
@@ -385,6 +479,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_For_2_Liquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount1,
             put_amount2,
@@ -423,6 +518,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_For_1_NonLiquidity_Request{
+            fund:_,
             take_amount: _,
             put_amount,
         } = request;
@@ -446,6 +542,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_1_NonLiquidity_For_1_NonLiquidity_Request{
+            fund: _,
             take_amount1: _,
             take_amount2: _,
             put_amount,
@@ -469,6 +566,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_NonLiquidity_For_1_Liquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount,
         } = request;
@@ -497,6 +595,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_NonLiquidity_For_2_Liquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount1,
             put_amount2,
@@ -537,6 +636,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_For_1_Liquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount,
         } = take_request;
@@ -570,6 +670,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_For_2_Liquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount1,
             put_amount2,
@@ -614,6 +715,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_For_1_NonLiquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount,
         } = request;
@@ -643,6 +745,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_Liquidity_1_NonLiquidity_For_1_NonLiquidity_Request{
+            fund: _,
             take_amount1: _,
             take_amount2: _,
             put_amount,
@@ -672,6 +775,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_NonLiquidity_For_1_Liquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount,
         } = request;
@@ -706,6 +810,7 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         
         let Take_1_NonLiquidity_For_2_Liquidity_Request{
+            fund: _,
             take_amount: _,
             put_amount1,
             put_amount2,
@@ -776,21 +881,34 @@ module stingray::fund{
 
         fund.is_settle = true;
         
+        event::emit(
+            Settled{
+                fund: *fund.id.as_inner(),
+                is_finished: true,
+            }
+        );
+        
         // calculate rewards
         let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value();
+        let fund_base = fund.base;
         fund.after_amount = total_base;
-        if (total_base > fund.base){
+        if (total_base > fund_base){
             if (fund.base < config.min_rewards()){
+                pay_platforem_fee(config, fund, (total_base - fund_base), ctx);
                 coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
             }else{
-                let rewards = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-                let to_settler_value = rewards.value() *  config.settle_percentage() / config.base_percentage();
-                let to_settle_balance = rewards.split(to_settler_value);
+                let total = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+                let reward_amount = total_base - fund_base;
+                let platform_fee = reward_amount * config.platform_fee() / config.base_percentage();
+                let to_settler_value = (reward_amount - platform_fee) *  config.settle_percentage() / config.base_percentage();
+                let to_settle_balance = total.split(to_settler_value);
+                pay_platforem_fee(config, fund, platform_fee, ctx);
                 coin::from_balance<FundCoinType>(to_settle_balance, ctx)
             }
         }else{
             coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
         }
+
     }
 
     public fun claim<FundCoinType>(
@@ -812,17 +930,50 @@ module stingray::fund{
         let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
         fund_share::burn<FundCoinType>(config, burn_request, shares);
         
-        // calculate rewards
-        if (fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value() - fund.base >= config.min_rewards()){
+        if (fund.after_amount < fund.base ){
             let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-            let investor_amount =  (fund.after_amount - fund.trader_stake - ((fund.after_amount - fund.base) * fund.trader_fee / config.base_percentage()))  * share_amount / fund.share_info.total_share;
-            let to_investor_balance = total_asset.split<FundCoinType>(investor_amount);
-            coin::from_balance<FundCoinType>(to_investor_balance, ctx)
+            let withdraw_amount = fund.after_amount * share_amount / fund.share_info.total_share;
+
+            event::emit(
+                Claimed<FundCoinType>{
+                    receiver: ctx.sender(),
+                    amount: withdraw_amount,
+                }
+            );
+
+            coin::from_balance<FundCoinType>(total_asset.split(withdraw_amount), ctx)
         }else{
-            coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
+            // calculate rewards
+            if (fund.after_amount - fund.base >= config.min_rewards()){
+                let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+                let platform_fee = (fund.after_amount - fund.base) * config.platform_fee() / config.base_percentage();
+                let trader_fee = (fund.after_amount - fund.base) * fund.trader_fee / config.base_percentage();
+                let investor_amount = (fund.after_amount - platform_fee - trader_fee) * share_amount / fund.share_info.total_share;
+                let to_investor_balance = total_asset.split<FundCoinType>(investor_amount);
+
+                event::emit(
+                    Claimed<FundCoinType>{
+                        receiver: ctx.sender(),
+                        amount: investor_amount,
+                    }
+                );
+
+                coin::from_balance<FundCoinType>(to_investor_balance, ctx)
+            }else{
+                let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+                let final_amount = fund.base * share_amount / fund.share_info.total_share;
+                
+                event::emit(
+                    Claimed<FundCoinType>{
+                        receiver: ctx.sender(),
+                        amount: final_amount,
+                    }
+                );
+
+                coin::from_balance<FundCoinType>(total_asset.split(final_amount), ctx)
+            }
         }
     }
-
     public fun trader_claim<FundCoinType>(
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
@@ -832,17 +983,37 @@ module stingray::fund{
         assert_if_trader_not_matched(fund, trader);
         assert_if_not_settle(fund);
         
-        if (fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value() >= fund.base ){
-            if (fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value() - fund.base >= config.min_rewards()){
+        if (fund.after_amount >= fund.base ){
+            if (fund.after_amount - fund.base >= config.min_rewards()){
                 let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
                 let trader_amount = ( fund.after_amount - fund.base ) * fund.trader_fee / config.base_percentage();
                 let to_trader_balance = total_asset.split<FundCoinType>(trader_amount);
-
+  event::emit(
+                    TraderClaimed<FundCoinType>{
+                        trader: trader.id(),
+                        receiver: ctx.sender(),
+                        amount: trader_amount,
+                    }
+                );
                 coin::from_balance<FundCoinType>(to_trader_balance, ctx)
             }else{
+                event::emit(
+                    TraderClaimed<FundCoinType>{
+                        trader: trader.id(),
+                        receiver: ctx.sender(),
+                        amount: 0,
+                    }
+                );
                 coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
             }
         }else{
+            event::emit(
+                    TraderClaimed<FundCoinType>{
+                        trader: trader.id(),
+                        receiver: ctx.sender(),
+                        amount: 0,
+                    }
+            );
             coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
         }
     }
@@ -1067,4 +1238,23 @@ module stingray::fund{
         assert!(fund.time.start_time + fund.time.invest_duration >= clock.timestamp_ms(), EOverInvestTime);
     }
 
+    fun pay_platforem_fee<CoinType>(
+        config: &GlobalConfig,
+        fund: &mut Fund<CoinType>,
+        amount: u64,
+        ctx: &mut TxContext,
+    ){
+        let platform_fee = fund.asset.assets.borrow_mut<TypeName, Balance<CoinType>>(type_name::get<Balance<CoinType>>()).split(amount);
+        transfer::public_transfer(coin::from_balance(platform_fee, ctx), config.platform());
+    }
+
+    // temporary function
+    public entry fun withdraw<CoinType>(
+        _: &AdminCap,
+        fund: &mut Fund<CoinType>,
+        ctx: &mut TxContext,
+    ){
+        let output_coin = fund.asset.assets.remove<TypeName ,Balance<CoinType>>(type_name::get<Balance<CoinType>>());
+        transfer::public_transfer(coin::from_balance(output_coin, ctx), ctx.sender());
+    }
 }

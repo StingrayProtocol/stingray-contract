@@ -10,6 +10,7 @@ module stingray::arena{
         table::{Self, Table,},
         clock:: {Clock},
         dynamic_field as df,
+        event::{Self,},
     };
 
     use stingray::{
@@ -59,7 +60,7 @@ module stingray::arena{
         invest_duration: u64,
         end_time: u64,
         funds: Table<ID, ID>, // trader -> fund
-        traders: vector<address>,
+        traders: vector<ID>,
         result: Table<u64, Result>,
         is_rank_claimed: Table<ID, bool>,
     }
@@ -70,6 +71,33 @@ module stingray::arena{
         end_time: u64, 
         rank: u64,
     }
+
+    public struct NewArena<phantom CoinType> has copy, drop{
+        id: ID,
+        arena_type: u8,
+        start_time: u64,
+        attend_duration: u64,
+        invest_duration: u64,
+        end_time: u64,
+    } 
+
+    public struct Attended<phantom CoinType> has copy, drop{
+        fund_id: ID,
+        arena_id: ID,
+    } 
+    
+    public struct Challenge has copy , drop{
+        fund_id: ID,
+        is_success: bool,
+    }
+
+    public struct ClaimRank has copy, drop{
+        trader: ID,
+        arena: ID,
+        fund: ID,
+        rank: u64,
+    }
+
 
     fun init (ctx: &mut TxContext){
         let host = ArenaHost<SUI> {
@@ -103,6 +131,16 @@ module stingray::arena{
             ctx,
         );
         
+        event::emit(
+            NewArena<CoinType>{
+                id: *arena.id.as_inner(),
+                arena_type: arena.arena_type,
+                start_time: arena.start_time,
+                attend_duration: arena.attend_duration,
+                invest_duration: arena.invest_duration,
+                end_time: arena.end_time,
+            },
+        );
         transfer::share_object(arena);
     }
 
@@ -138,7 +176,7 @@ module stingray::arena{
                 invest_duration,
                 end_time: start_time + (86400000 * 7),
                 funds: table::new<ID, ID>(ctx),
-                traders: vector::empty<address>(),
+                traders: vector::empty<ID>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
@@ -151,7 +189,7 @@ module stingray::arena{
                 invest_duration,
                 end_time: start_time + (86400000 * 30),
                 funds: table::new<ID, ID>(ctx),
-                traders: vector::empty<address>(),
+                traders: vector::empty<ID>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
@@ -187,18 +225,27 @@ module stingray::arena{
         // update fund
         fund.update_time(arena.start_time + arena.attend_duration, arena.start_time + arena.attend_duration + arena.invest_duration, arena.end_time);
         fund.set_is_arena(true);
+        arena.traders.push_back(trader.id());
         
+        event::emit(
+            Attended<CoinType>{
+                fund_id: *fund.id().as_inner(),
+                arena_id: *arena.id.as_inner(),
+            },
+        ); 
     }
 
     public fun challenge<CoinType>(
         arena: &mut Arena<CoinType>,
-        fund: &Fund<CoinType>,
+        fund: &mut Fund<CoinType>,
         trader: &Trader,
     ){
         assert_if_fund_trader_not_matched(fund, trader);
         assert_if_trader_not_attended_arena(arena, trader);
 
         let mut result = 0;
+
+        let mut is_replace = false;
         
         if (fund.after_amount() > fund.base()){
             result = ((fund.after_amount() - fund.base()) as u128) * BASE / (fund.base() as u128);
@@ -224,6 +271,7 @@ module stingray::arena{
                         trader: key,
                         result: value,
                     });
+                    is_replace = true;
                     key = recorded_win.trader;
                     value = recorded_win.result;
                 }else{
@@ -240,7 +288,12 @@ module stingray::arena{
                 } = recorded_win;
             }
             
-        }
+        };
+
+        event::emit(Challenge{
+                fund_id: *fund.id().as_inner(),
+                is_success: is_replace,
+        });
     }
 
     public fun claim_rank<CoinType>(
@@ -256,14 +309,26 @@ module stingray::arena{
         let third = arena.result.borrow(2);
 
         let certificate = df::borrow_mut<ID, Certificate>(&mut arena.id, *fund.id().as_inner());
-
+        let mut rank = 0;
         if (trader.id() == first.trader){
             certificate.rank = 1;
+            rank = 1;
         }else if (trader.id() == second.trader){
             certificate.rank = 2;
+            rank = 2;
         }else if (trader.id() == third.trader){
             certificate.rank = 3;
+            rank = 3;
         }; 
+
+        event::emit(
+            ClaimRank{
+                trader: trader.id(),
+                fund: *fund.id().as_inner(),
+                arena: *arena.id.as_inner(),
+                rank,
+            }
+        );
     }
 
     fun create_certificate<CoinType>(
@@ -332,6 +397,13 @@ module stingray::arena{
         trader: &Trader,
     ){
         assert!(arena.funds.contains(trader.id()), ETraderNotAttended );
+    }
+
+    #[test_only]
+    public(package) fun test_init(
+        ctx: &mut TxContext,
+    ){
+        init(ctx);
     }
 
 }

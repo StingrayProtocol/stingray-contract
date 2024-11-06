@@ -18,12 +18,12 @@ module pyth::version_control {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-    public(friend) fun current_version(): V__0_1_2 {
-       V__0_1_2 {}
+    public(friend) fun current_version(): V__0_1_1 {
+       V__0_1_1 {}
     }
 
-    public(friend) fun previous_version(): V__0_1_1 {
-        V__0_1_1 {}
+    public(friend) fun previous_version(): V__DUMMY {
+        V__DUMMY {}
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -34,11 +34,6 @@ module pyth::version_control {
     //  notes will be our attempt at tracking upgrades. Wish us luck.
     //
     ////////////////////////////////////////////////////////////////////////////
-
-    /// RELEASE NOTES
-    ///
-    /// - Gas optimizations on merkle tree verifications
-    struct V__0_1_2 has store, drop, copy {}
 
     /// RELEASE NOTES
     ///
@@ -75,7 +70,7 @@ module pyth::version_control {
     }
 
     #[test_only]
-    public fun previous_version_test_only(): V__0_1_1 {
+    public fun previous_version_test_only(): V__DUMMY {
         previous_version()
     }
 }

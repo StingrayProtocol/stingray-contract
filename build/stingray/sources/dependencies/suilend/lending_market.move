@@ -15,7 +15,7 @@ module suilend::lending_market {
     use suilend::obligation::{Self, Obligation};
     use sui::coin::{Self, Coin, CoinMetadata};
     use sui::balance::{Self};
-    use pyth::price_info::{PriceInfoObject};
+    use suilend_pyth::price_info::{PriceInfoObject};
     use std::type_name::{Self, TypeName};
     use std::vector::{Self};
     use std::option::{Self, Option};
@@ -2577,8 +2577,8 @@ module suilend::lending_market {
 
         // TODO: assert changes
         let reserve_ref = reserve<LENDING_MARKET, TEST_USDC>(&lending_market);
-        let price_id = pyth::price_info::get_price_identifier(
-            &pyth::price_info::get_price_info_from_price_info_object(&new_price_info_obj)
+        let price_id = suilend_pyth::price_info::get_price_identifier(
+            &suilend_pyth::price_info::get_price_info_from_price_info_object(&new_price_info_obj)
         );
 
         assert_eq(*reserve::price_identifier(reserve_ref), price_id);
