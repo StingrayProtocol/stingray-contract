@@ -39,7 +39,11 @@ module stingray::fund_share{
 
     const EFundIdNotMatched: u64 = 0;
     const EFundEndTimeNotMatched: u64 = 1;
-    
+    const EOutOfAmount:u64 = 2;
+    const EFundShareFundIdNotMatched: u64 = 3;
+    const EFundShareTraderNotMatched: u64 = 4;
+    const EFundShareFundTypeNotMatched: u64 = 5;
+    const EFundShareEndTimeNotMatched: u64 = 6;
 
     public(package) fun create_mint_request<FundCoinType>(
         config: &GlobalConfig,
@@ -74,6 +78,44 @@ module stingray::fund_share{
             fund_id,
             end_time,
         }
+    }
+
+    public fun split(
+        share: &mut FundShare,
+        amount: u64,
+        ctx: &mut TxContext,
+    ): FundShare{
+        assert_if_amount_not_enough(share, amount);
+        share.invest_amount = share.invest_amount - amount;
+        FundShare{
+            id: object::new(ctx),
+            fund_id: share.fund_id,
+            trader: share.trader,
+            fund_type: share.fund_type,
+            invest_amount: share.invest_amount,
+            end_time: share.end_time,
+        }
+    }
+
+    public fun join(
+        share: &mut FundShare,
+        to_be_join: FundShare,
+    ){
+        assert_if_share_not_same_category(share, &to_be_join);
+
+        let FundShare{
+            id: id,
+            fund_id: _,
+            trader: _,
+            fund_type: _,
+            invest_amount: invest_amount,
+            end_time: _,
+        } = to_be_join;
+        
+        share.invest_amount = share.invest_amount + invest_amount;
+
+        object::delete(id);
+
     }
 
     public fun mint<FundCoinType>(
@@ -148,5 +190,22 @@ module stingray::fund_share{
         request_end_time: u64,
     ){
         assert!(share.end_time == request_end_time, EFundEndTimeNotMatched);
+    }
+
+    fun assert_if_amount_not_enough(
+        share: &FundShare,
+        amount: u64,
+    ){
+        assert!(share.invest_amount >= amount, EOutOfAmount);
+    }   
+
+    fun assert_if_share_not_same_category(
+        share: &FundShare,
+        to_be_join: &FundShare,
+    ){
+        assert!(share.fund_id == to_be_join.fund_id, EFundShareFundIdNotMatched);
+        assert!(share.trader == to_be_join.trader, EFundShareTraderNotMatched);
+        assert!(share.fund_type == to_be_join.fund_type, EFundShareFundTypeNotMatched);
+        assert!(share.end_time == to_be_join.end_time, EFundShareEndTimeNotMatched);
     }
 }
