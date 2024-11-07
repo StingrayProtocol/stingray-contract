@@ -274,12 +274,12 @@ module stingray::trader{
         assert!(!dof::borrow<Name, SuinsRegistration >(&card.id, Name{}).has_expired(clock), ENsExpired);
     }
 
-    fun assert_if_ns_expired_by_ns(
-        sui_ns: &SuinsRegistration,
-        clock: &Clock,
-    ){
-        assert!(!sui_ns.has_expired(clock), ENsExpired);
-    }
+    // fun assert_if_ns_expired_by_ns(
+    //     sui_ns: &SuinsRegistration,
+    //     clock: &Clock,
+    // ){
+    //     assert!(!sui_ns.has_expired(clock), ENsExpired);
+    // }
 
     fun assert_if_no_ns(
         trader: &Trader,

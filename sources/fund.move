@@ -39,6 +39,7 @@ module stingray::fund{
     const EBaseTypeNotMatched: u64 = 14;
     const ENotSettle: u64 = 15;
     const EOverInvestTime: u64 = 16;
+    const ENotArrivedInvestTime: u64 = 17;
     
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -258,6 +259,7 @@ module stingray::fund{
     ): MintRequest<FundCoinType>{
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_over_invest_duration(fund, clock);
+        assert_if_not_arrived_invest_duration(fund, clock);
 
         let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
         let invest_amount = invest_coin.value();
@@ -292,7 +294,48 @@ module stingray::fund{
             fund.time.end_time)
     }
 
-    // cancel_invest ... to be continue
+    // cancel_invest
+    #[allow(lint(self_transfer))]
+    public fun deinvest<FundCoinType>(
+        config: &GlobalConfig,
+        fund: &mut Fund<FundCoinType>,
+        mut shares: vector<FundShare>,
+        amount: u64,
+        clock: &Clock,
+        ctx: &mut TxContext,
+    ){  
+        config::assert_if_version_not_matched(config, VERSION);
+        assert_if_over_invest_duration(fund, clock);
+        assert_if_not_arrived_invest_duration(fund, clock);
+        
+        let mut total_share = shares.pop_back();
+        let loop_times = shares.length() - 1;
+        
+        let mut current_idx = 0;
+        while(current_idx < loop_times){
+            let share = shares.pop_back();
+            total_share.join(share);
+            current_idx = current_idx + 1;
+        };
+        let deinvest_share = total_share.split(amount, ctx);  
+        
+        if (total_share.invest_amount() == 0){
+            let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
+            fund_share::burn<FundCoinType>(config, burn_request, total_share);
+        }else{
+            transfer::public_transfer(total_share, ctx.sender());
+        };
+
+        let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+        let to_deinvestor = fund_asset.split(deinvest_share.invest_amount());
+        
+        transfer::public_transfer(coin::from_balance(to_deinvestor, ctx), ctx.sender());
+
+        let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
+        fund_share::burn<FundCoinType>(config, burn_request, deinvest_share);
+
+        vector::destroy_empty(shares);
+    }
 
     // take asset function , i.e scallop deposit, cetus swap
     public fun take_1_liquidity_for_1_liquidity< TakeCoinType, PutCoinType, FundCoinType>(
@@ -1236,6 +1279,12 @@ module stingray::fund{
         clock: &Clock,
     ){
         assert!(fund.time.start_time + fund.time.invest_duration >= clock.timestamp_ms(), EOverInvestTime);
+    }
+    fun assert_if_not_arrived_invest_duration<FundCoinType>(
+        fund: &Fund<FundCoinType>,
+        clock: &Clock,
+    ){
+        assert!(fund.time.start_time >= clock.timestamp_ms(), ENotArrivedInvestTime);
     }
 
     fun pay_platforem_fee<CoinType>(
