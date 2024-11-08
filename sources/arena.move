@@ -32,6 +32,7 @@ module stingray::arena{
     const ETraderNotMatched: u64 = 5;
     const EPreviousFund: u64 = 6;
     const ETraderNotAttended: u64 = 7;
+    const EAttendTimeExpired: u64 = 8;
 
     const BASE: u128 = 1_000_000_000;
     const RANK_AMOUNT: u64 = 3;
@@ -223,7 +224,7 @@ module stingray::arena{
         df::add(fund.id(), type_name::get<Certificate>(), certificate);
 
         // update fund
-        fund.update_time(arena.start_time + arena.attend_duration, arena.start_time + arena.attend_duration + arena.invest_duration, arena.end_time);
+        fund.update_time(arena.start_time + arena.attend_duration, arena.invest_duration, arena.end_time);
         fund.set_is_arena(true);
         arena.traders.push_back(trader.id());
         
@@ -374,8 +375,8 @@ module stingray::arena{
         arena: &Arena<ArenaCoinType>,
         clock: &Clock,
     ){
-        assert!((clock.timestamp_ms() <= (arena.start_time + arena.attend_duration)) &&
-                (clock.timestamp_ms() >= arena.start_time), ENotArriveAttendTime);
+        assert!(clock.timestamp_ms() >= arena.start_time, ENotArriveAttendTime);
+        assert!(clock.timestamp_ms() <= (arena.start_time + arena.attend_duration), EAttendTimeExpired);
     }
 
     fun assert_if_fund_trader_not_matched<FundCoinType>(
