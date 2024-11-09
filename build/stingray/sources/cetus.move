@@ -24,8 +24,8 @@ module stingray::cetus{
     
     // To be noted: This function doesn't take care of slippage
     // To swap CoinX for CoinY, input the coin you are swapping in one of the args, and input zero balance for the coin you want to receive.
-    public fun swap<X, Y>(
-        request: &mut Take_1_Liquidity_For_1_Liquidity_Request<X, Y>,
+    public fun swap<TakeCoinType, PutCoinType, X, Y>(
+        request: &mut Take_1_Liquidity_For_1_Liquidity_Request<TakeCoinType, PutCoinType>,
         input_x: &mut Balance<X>,
         input_y: &mut Balance<Y>,
         config: &GlobalConfig,
@@ -45,7 +45,7 @@ module stingray::cetus{
             input_coin_type =type_name::get<X>();
         };
 
-        let amount = if(by_amount_in) input_x.value() else input_y.value();
+        let amount = if(x2y) input_x.value() else input_y.value();
         let sqrt_price_limit = if(x2y) 4295048016_u128 else 79226673515401279992447579055_u128;
         let (receive_x, receive_y, flash_receipt) = pool::flash_swap<X, Y>(
             config,
@@ -79,28 +79,28 @@ module stingray::cetus{
         input_x.join(receive_x);
         input_y.join(receive_y);
 
-        request.supported_defi_confirm_1l_for_1l(input_y.value());
 
         let output_amount;
         let output_coin_type;
         
-        if (input_x.value() == 0){
+        if (input_x.value() < input_y.value()){
             output_amount = input_y.value();
             output_coin_type =type_name::get<Y>();
         }else{
             output_amount = input_x.value();
             output_coin_type =type_name::get<X>();
         };
+
+        request.supported_defi_confirm_1l_for_1l(output_amount);
         
         event::emit(Swap{
             protocol: string::utf8(b"Cetus"),
             input_coin_type,
-            input_amount,
+            input_amount: input_amount,
             output_coin_type,
             output_amount,
             } 
         );
-
     }
 
     public fun take_zero_balance<CoinType>(): Balance<CoinType>{
@@ -112,4 +112,5 @@ module stingray::cetus{
     ){
         balance.destroy_zero();
     }
+    
 }

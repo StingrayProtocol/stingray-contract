@@ -1,16 +1,14 @@
 module stingray::config{
 
     const EVersionNotMatched: u64 = 0;
-    const EOverBaseMax: u64 = 1;
-    const ELessThanMinAsset: u64 = 2;
 
     public struct GlobalConfig has key{ 
         id: UID,
         version: u64,
         max_trader_fee: u64,
-        min_fund_base: u64,
-        max_fund_base: u64,
         min_rewards: u64,
+        trader_init_percentage: u64,
+        min_base: u64,
         settle_percentage: u64,
         base_percentage: u64,
         platform_fee: u64,
@@ -31,9 +29,9 @@ module stingray::config{
             id: object::new(ctx),
             version: 1u64,
             max_trader_fee: 2000,
-            min_fund_base: 100000000,
-            max_fund_base: 500000000,
             min_rewards: 1000000,
+            trader_init_percentage: 100,
+            min_base: 10000,
             settle_percentage: 100,
             base_percentage: 10000,
             platform_fee: 200,
@@ -66,21 +64,12 @@ module stingray::config{
     ){
         config.max_trader_fee = new_trader_fee;
     }
-
-    public fun update_min_base(
+    public fun update_trader_init_percentage(
         _: &AdminCap,
         config: &mut GlobalConfig,
-        new_fund_base: u64,
+        new_percentage: u64,
     ){
-        config.min_fund_base = new_fund_base;
-    }
-
-     public fun update_max_base(
-        _: &AdminCap,
-        config: &mut GlobalConfig,
-        new_fund_base: u64,
-    ){
-        config.max_fund_base = new_fund_base;
+        config.trader_init_percentage = new_percentage;
     }
 
     public fun update_platform_fee(
@@ -91,10 +80,24 @@ module stingray::config{
         config.platform_fee = new_platform_fee;
     }
 
+    public fun update_min_base(
+        _: &AdminCap,
+        config: &mut GlobalConfig,
+        new_min_base: u64,
+    ){
+        config.min_base = new_min_base;
+    }
+
     public(package) fun max_trader_fee(
         config: &GlobalConfig,
     ): u64{
         config.max_trader_fee
+    }
+
+    public (package) fun trader_init_percentage(
+        config: &GlobalConfig,
+    ): u64{
+        config.trader_init_percentage
     }
 
     public(package) fun platform_fee(
@@ -115,10 +118,10 @@ module stingray::config{
         config.platform
     }
 
-    public(package) fun min_fund_base(
+    public(package) fun min_base(
         config: &GlobalConfig,
-    ): u64{
-        config.min_fund_base
+    ):u64{
+        config.min_base
     }
 
     public(package) fun settle_percentage(
@@ -133,31 +136,11 @@ module stingray::config{
         config.base_percentage
     }
 
-    public(package) fun max_fund_base(
-        config: &GlobalConfig,
-    ): u64{
-        config.max_fund_base
-    }
-
     public(package) fun assert_if_version_not_matched(
         config: &GlobalConfig,
         contract_version: u64,
     ) {
         assert!(config.version == contract_version, EVersionNotMatched);
-    }
-
-    public(package) fun assert_if_base_over_max(
-        config: &GlobalConfig,
-        after_base: u64,
-    ) {
-        assert!(after_base <= config.max_fund_base, EOverBaseMax);
-    }
-
-    public(package) fun assert_if_less_than_min_fund_base(
-        config: &GlobalConfig,
-        input_base_amount: u64,
-    ){
-        assert!(config.min_fund_base() <= input_base_amount, ELessThanMinAsset);
     }
 
     #[test_only]

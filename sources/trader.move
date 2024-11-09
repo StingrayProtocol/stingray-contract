@@ -30,6 +30,7 @@ module stingray::trader{
         first_name: String,
         card_img: String,
         pfp_img: String,
+        description: String,
         birth: u64,
     }
     public struct HostController has key {
@@ -74,11 +75,11 @@ module stingray::trader{
             // name
             string::utf8(b"Stingrey: {first_name} {last_name}"),
             // description
-            string::utf8(b"Trader Certificate"),
+            string::utf8(b"{description}"),
             // image_url
             string::utf8(b"https://aggregator-devnet.walrus.space/v1/{card_img}"),
             // project_url
-            string::utf8(b"https://stingray.walrus.site"),
+            string::utf8(b"https://stingraylabs.xyz"),
         ];
 
         let deployer = ctx.sender();
@@ -106,6 +107,7 @@ module stingray::trader{
         // sui_ns: SuinsRegistration,
         pfp_img: String, // blob id 
         card_img: String, // blob id 
+        description: String,
         coin: Coin<SUI>,
         clock: &Clock,
         ctx: &mut TxContext,
@@ -129,6 +131,7 @@ module stingray::trader{
             last_name: string::utf8(b""),// last_name,
             card_img,
             pfp_img,
+            description,
             birth: clock.timestamp_ms(),
         };
         

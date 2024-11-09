@@ -1,7 +1,7 @@
 module stingray::arena{
 
     use std::{
-        type_name::{Self},
+        type_name::{Self, TypeName},
     };
 
     use sui::{
@@ -23,6 +23,8 @@ module stingray::arena{
     
     const WEEK: u8 = 0;
     const MONTH: u8 = 1;
+    const SEASON:u8 = 2;
+    const YEAR: u8 = 4;
 
     const ETraderAlreadyAttended: u64 = 0;
     const ETypeNotMatched: u64 = 1;
@@ -33,6 +35,8 @@ module stingray::arena{
     const EPreviousFund: u64 = 6;
     const ETraderNotAttended: u64 = 7;
     const EAttendTimeExpired: u64 = 8;
+    const EAlreadyAttendAnotherArena: u64 = 9;
+    const EArenaTypeNotDefined: u64 = 10;
 
     const BASE: u128 = 1_000_000_000;
     const RANK_AMOUNT: u64 = 3;
@@ -148,6 +152,7 @@ module stingray::arena{
     public fun create_arena_request<CoinType>(
         arena_type: u8,
     ): ArenaRequest<CoinType>{
+        assert_if_arena_type_not_supported(arena_type);
         ArenaRequest<CoinType> { arena_type, }
     }
 
@@ -175,26 +180,52 @@ module stingray::arena{
                 start_time,
                 attend_duration,
                 invest_duration,
-                end_time: start_time + (86400000 * 7),
+                end_time: start_time + attend_duration + invest_duration + (86400000 * 7),
                 funds: table::new<ID, ID>(ctx),
                 traders: vector::empty<ID>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
-        }else{ // MONTH
+        }else if (arena_type == MONTH){ 
             Arena{
                 id: object::new(ctx),
                 arena_type,
                 start_time,
                 attend_duration,
                 invest_duration,
-                end_time: start_time + (86400000 * 30),
+                end_time: start_time + attend_duration + invest_duration + (86400000 * 30),
                 funds: table::new<ID, ID>(ctx),
                 traders: vector::empty<ID>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
-        }  
+        }else if (arena_type == SEASON){
+            Arena{
+                id: object::new(ctx),
+                arena_type,
+                start_time,
+                attend_duration,
+                invest_duration,
+                end_time: start_time + attend_duration + invest_duration + (86400000 * 90),
+                funds: table::new<ID, ID>(ctx),
+                traders: vector::empty<ID>(),
+                result,
+                is_rank_claimed: table::new<ID,bool>(ctx)
+            }
+        } else{ // YEAR
+            Arena{
+                id: object::new(ctx),
+                arena_type,
+                start_time,
+                attend_duration,
+                invest_duration,
+                end_time: start_time + attend_duration + invest_duration + (86400000 * 365),
+                funds: table::new<ID, ID>(ctx),
+                traders: vector::empty<ID>(),
+                result,
+                is_rank_claimed: table::new<ID,bool>(ctx)
+            }
+        } 
     }
 
     public fun attend<CoinType>(
@@ -206,6 +237,8 @@ module stingray::arena{
         clock: &Clock,
     ){
         config::assert_if_version_not_matched(config, VERSION);
+        assert_if_already_attend_other_arena(fund);
+
         assert_if_trader_already_attend(arena, fund);
         assert_if_not_arrive_attend_time(arena,clock); 
         assert_if_fund_is_previous(fund, arena);
@@ -398,6 +431,19 @@ module stingray::arena{
         trader: &Trader,
     ){
         assert!(arena.funds.contains(trader.id()), ETraderNotAttended );
+    }
+
+    fun assert_if_already_attend_other_arena<FundCoinType>(
+        fund: &mut Fund<FundCoinType>,
+    ){
+        let certificate_type = type_name::get<Certificate>();
+        assert!(!df::exists_<TypeName>(fund.id(), certificate_type), EAlreadyAttendAnotherArena);
+    }
+
+    fun assert_if_arena_type_not_supported(
+        arena_type: u8,
+    ){
+        assert!(arena_type == WEEK || arena_type == MONTH || arena_type == SEASON || arena_type == YEAR, EArenaTypeNotDefined);
     }
 
     #[test_only]

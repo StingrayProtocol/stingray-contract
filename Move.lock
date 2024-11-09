@@ -2,7 +2,7 @@
 
 [move]
 version = 3
-manifest_digest = "EDFFB99E7863CF600E25C2C30108A71906F04DC751418421459D6AA32997E7D8"
+manifest_digest = "9775966C9BDEDA0BF7CDE92899E6783539C75672AB1C0D53FAC59B2AD8B351EA"
 deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
 dependencies = [
   { id = "BucketProtocol", name = "BucketProtocol" },
@@ -187,8 +187,6 @@ dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
-[env]
-
 [[move.package]]
 id = "fountain"
 source = { local = "lib/fountain" }
@@ -206,12 +204,6 @@ dependencies = [
   { id = "SuilendPyth", name = "SuilendPyth" },
 ]
 
-[env.mainnet]
-chain-id = "35834a8a"
-original-published-id = "0xcacda721d0073c451b0df93ebc4be2c8f8f2413dbcccbbe21ca7648969c48ef8"
-latest-published-id = "0xcacda721d0073c451b0df93ebc4be2c8f8f2413dbcccbbe21ca7648969c48ef8"
-published-version = "1"
-
 [[move.package]]
 id = "suins"
 source = { local = "lib/suins" }
@@ -224,3 +216,11 @@ dependencies = [
 compiler-version = "1.35.0"
 edition = "2024.beta"
 flavor = "sui"
+
+[env]
+
+[env.mainnet]
+chain-id = "35834a8a"
+original-published-id = "0x7c207fe2de082140d73203dcdc2aaafef87c2568284aaa538afc92adadf1f2c7"
+latest-published-id = "0x7c207fe2de082140d73203dcdc2aaafef87c2568284aaa538afc92adadf1f2c7"
+published-version = "1"
