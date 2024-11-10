@@ -2,7 +2,7 @@
 
 [move]
 version = 3
-manifest_digest = "9775966C9BDEDA0BF7CDE92899E6783539C75672AB1C0D53FAC59B2AD8B351EA"
+manifest_digest = "2A021E7E8A2103119C466E914192DAF0E59F736908F3D3925C060778A2AFCDDE"
 deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
 dependencies = [
   { id = "BucketProtocol", name = "BucketProtocol" },
@@ -221,6 +221,6 @@ flavor = "sui"
 
 [env.mainnet]
 chain-id = "35834a8a"
-original-published-id = "0x7c207fe2de082140d73203dcdc2aaafef87c2568284aaa538afc92adadf1f2c7"
-latest-published-id = "0x7c207fe2de082140d73203dcdc2aaafef87c2568284aaa538afc92adadf1f2c7"
-published-version = "1"
+original-published-id = "0xc160d3a2705ed6806e66fcfff54ff90c8a136c7ce973f48f28019a322f07c1ef"
+latest-published-id = "0x767b8bfa0b9abfa6844b8369f4c5db05fcccb3fd805f975a88c459ee20309013"
+published-version = "2"

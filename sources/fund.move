@@ -371,6 +371,7 @@ module stingray::fund{
         
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
+        let total_value = total_balance.value();
         let take_balance = total_balance.split(amount);
         let take_request = Take_1_Liquidity_For_1_Liquidity_Request<TakeCoinType, PutCoinType>{
             fund: *fund.id().as_inner(),
@@ -378,7 +379,7 @@ module stingray::fund{
             put_amount: 0,
         };
 
-        if (amount == take_balance.value()){
+        if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
             fund.asset.asset_types.remove(idx);
@@ -403,6 +404,7 @@ module stingray::fund{
         
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
+        let total_value = total_balance.value();
         let take_balance = total_balance.split(amount);
         let take_request = Take_1_Liquidity_For_2_Liquidity_Request<TakeCoinType, PutCoinType1, PutCoinType2>{
             fund: *fund.id().as_inner(),
@@ -411,7 +413,7 @@ module stingray::fund{
             put_amount2: 0,
         };
 
-        if (amount == take_balance.value()){
+        if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
             fund.asset.asset_types.remove(idx);
@@ -435,6 +437,7 @@ module stingray::fund{
         assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
+        let total_value = total_balance.value();
         let take_balance = total_balance.split(amount);
         
         let take_request = Take_1_Liquidity_For_1_NonLiquidity_Request<TakeCoinType, PutAsset>{
@@ -443,7 +446,7 @@ module stingray::fund{
             put_amount: 0,
         };
 
-        if (amount == take_balance.value()){
+        if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
             fund.asset.asset_types.remove(idx);
@@ -468,6 +471,7 @@ module stingray::fund{
         assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
+        let total_value = total_balance.value();
         let take_balance = total_balance.split(amount);
         let take_asset = fund.asset.assets.remove<TypeName, TakeAsset>(type_name::get<TakeAsset>());
         
@@ -478,7 +482,7 @@ module stingray::fund{
             put_amount: 0,
         };
 
-        if (amount == take_balance.value()){
+        if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
             fund.asset.asset_types.remove(idx);
