@@ -10,6 +10,7 @@ module stingray::trader{
         dynamic_object_field as dof, 
         clock::{Clock},
         event::{Self, },
+        table::{Self, Table},
         sui::{SUI},
     };
 
@@ -23,6 +24,7 @@ module stingray::trader{
     const ENsExpired: u64 = 1;
     const ENoNsBounnd: u64 = 2;
     const EBalanceNotMatched: u64 = 3;
+    const EAlreadyMinted: u64 = 4;
 
     public struct Trader has key{
         id: UID,
@@ -37,6 +39,7 @@ module stingray::trader{
         id: UID,
         balance: Balance<SUI>,
         register_fee: u64,
+        mint_record: Table<address, ID>,
     }
     
     // define key
@@ -77,7 +80,7 @@ module stingray::trader{
             // description
             string::utf8(b"{description}"),
             // image_url
-            string::utf8(b"https://aggregator-devnet.walrus.space/v1/{card_img}"),
+            string::utf8(b"https://aggregator.walrus-testnet.walrus.space/v1/{card_img}"),
             // project_url
             string::utf8(b"https://stingraylabs.xyz"),
         ];
@@ -94,6 +97,7 @@ module stingray::trader{
             id: object::new(ctx),
             balance: balance::zero<SUI>(),
             register_fee: 10000000, // 0.01 SUI
+            mint_record: table::new<address, ID>(ctx),
         };
 
         transfer::public_transfer(displayer, deployer);
@@ -114,6 +118,7 @@ module stingray::trader{
     ) {
 
         config::assert_if_version_not_matched(config, VERSION);
+        assert_if_already_minted(controller, ctx);
         let balance = coin.into_balance();
         //assert_if_ns_expired_by_ns(&sui_ns, clock);
         assert_if_balance_not_matched(controller, &balance );
@@ -145,6 +150,8 @@ module stingray::trader{
                 new_last_name: string::utf8(b""),//last_name
             }
         );
+
+        controller.mint_record.add(ctx.sender(), *trader.id.as_inner());
 
         transfer::transfer(trader, ctx.sender());
     }
@@ -296,6 +303,13 @@ module stingray::trader{
         balance: &Balance<SUI>,
     ){
         assert!(controller.register_fee == balance.value(), EBalanceNotMatched)
+    }
+
+    fun assert_if_already_minted(
+        controller: &HostController, 
+        ctx: &TxContext
+    ){
+        assert!(!controller.mint_record.contains(ctx.sender()), EAlreadyMinted);
     }
 
     public entry fun take_sui_ns(
