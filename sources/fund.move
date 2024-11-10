@@ -109,6 +109,7 @@ module stingray::fund{
 
     public struct Fund<phantom CoinType> has key {
         id: UID,
+        name: String,
         description: String,
         fund_img: String,
         trader: ID,
@@ -125,6 +126,7 @@ module stingray::fund{
 
     public struct CreatedFund has copy, drop {
         id: ID,
+        name: String,
         description: String, 
         fund_img: String,
         trader: ID,
@@ -161,6 +163,7 @@ module stingray::fund{
     // create fund
     public fun create<FundCoinType> (
         config: &GlobalConfig,
+        name: String,
         description: String,
         fund_img: String, 
         trader: &Trader,
@@ -182,7 +185,7 @@ module stingray::fund{
         assert_if_init_value_over_limoit(limit_amount, &coin);
         assert_if_init_value_not_enough<FundCoinType>(config, limit_amount, &coin);
         assert_if_time_setting_wrong(start_time, invest_duration, end_time);
-        assert_if_over_current_time(start_time, clock);
+        //assert_if_over_current_time(start_time, clock);
 
         let mut type_arr = vector::empty<TypeName>();
         let asset_type = type_name::get<Balance<FundCoinType>>();
@@ -198,6 +201,7 @@ module stingray::fund{
 
         let fund = Fund<FundCoinType>{
             id: object::new(ctx),
+            name,
             description,
             fund_img,
             trader: trader.id(),
@@ -222,6 +226,7 @@ module stingray::fund{
         event::emit(
             CreatedFund{
                 id: *fund.id.as_inner(),
+                name,
                 description,
                 fund_img,
                 trader: trader.id(),

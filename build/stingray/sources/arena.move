@@ -169,7 +169,7 @@ module stingray::arena{
 
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_arena_type_not_allowed(arena_type);
-        assert_if_over_current_time(start_time, clock);
+        //assert_if_over_current_time(start_time, clock);
 
         let result = table::new<u64, Result>(ctx);
 

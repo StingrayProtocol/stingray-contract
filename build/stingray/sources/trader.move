@@ -56,6 +56,9 @@ module stingray::trader{
         trader_id: ID,
         new_first_name: String,
         new_last_name: String,
+        minter: address,
+        description: String,
+        pfp_img: String
     }
 
     public struct UpdatePFP has copy, drop{
@@ -148,6 +151,9 @@ module stingray::trader{
                 trader_id: *trader.id.as_inner(),
                 new_first_name: string::utf8(b""),//first_name
                 new_last_name: string::utf8(b""),//last_name
+                minter: ctx.sender(),
+                description,
+                pfp_img,
             }
         );
 
