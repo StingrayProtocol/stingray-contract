@@ -110,6 +110,7 @@ module stingray::fund{
     public struct Fund<phantom CoinType> has key {
         id: UID,
         description: String,
+        fund_img: String,
         trader: ID,
         trader_fee: u64,
         asset: InvestRecord,
@@ -125,6 +126,7 @@ module stingray::fund{
     public struct CreatedFund has copy, drop {
         id: ID,
         description: String, 
+        fund_img: String,
         trader: ID,
         trader_fee: u64,
         trader_stake: u64,
@@ -160,6 +162,7 @@ module stingray::fund{
     public fun create<FundCoinType> (
         config: &GlobalConfig,
         description: String,
+        fund_img: String, 
         trader: &Trader,
         trader_fee: u64,
         is_arena: bool,
@@ -196,6 +199,7 @@ module stingray::fund{
         let fund = Fund<FundCoinType>{
             id: object::new(ctx),
             description,
+            fund_img,
             trader: trader.id(),
             trader_fee,
             asset: investRecord,
@@ -219,6 +223,7 @@ module stingray::fund{
             CreatedFund{
                 id: *fund.id.as_inner(),
                 description,
+                fund_img,
                 trader: trader.id(),
                 trader_fee,
                 trader_stake: init_amount,
@@ -373,6 +378,12 @@ module stingray::fund{
             put_amount: 0,
         };
 
+        if (amount == take_balance.value()){
+            let take_asset_type = type_name::get<Balance<TakeCoinType>>();
+            let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
+            fund.asset.asset_types.remove(idx);
+        };
+
         (take_balance, take_request)
     }
     
@@ -400,6 +411,12 @@ module stingray::fund{
             put_amount2: 0,
         };
 
+        if (amount == take_balance.value()){
+            let take_asset_type = type_name::get<Balance<TakeCoinType>>();
+            let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
+            fund.asset.asset_types.remove(idx);
+        };
+
         (take_balance, take_request)
     }
     
@@ -424,6 +441,12 @@ module stingray::fund{
             fund: *fund.id().as_inner(),
             take_amount: take_balance.value(),
             put_amount: 0,
+        };
+
+        if (amount == take_balance.value()){
+            let take_asset_type = type_name::get<Balance<TakeCoinType>>();
+            let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
+            fund.asset.asset_types.remove(idx);
         };
 
         (take_balance, take_request)
@@ -453,6 +476,12 @@ module stingray::fund{
             take_amount1: take_balance.value(),
             take_amount2: 1,
             put_amount: 0,
+        };
+
+        if (amount == take_balance.value()){
+            let take_asset_type = type_name::get<Balance<TakeCoinType>>();
+            let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type);
+            fund.asset.asset_types.remove(idx);
         };
 
         (take_balance, take_asset, take_request)
@@ -544,7 +573,6 @@ module stingray::fund{
             fund.asset.assets.add(asset_type, liquidity);
         };
 
-        clear_if_less_than_threshold<PutCoinType, FundCoinType>(fund);
     }
 
     public fun put_1_liquidity_for_2_liquidity<TakeCoinType, PutCoinType1, PutCoinType2, FundCoinType>(
@@ -587,8 +615,6 @@ module stingray::fund{
             fund.asset.asset_types.push_back(asset_type2);
             fund.asset.assets.add(asset_type2, liquidity2);
         };
-        clear_if_less_than_threshold<PutCoinType1, FundCoinType>(fund);
-        clear_if_less_than_threshold<PutCoinType2, FundCoinType>(fund);
     }
 
     public fun put_1_liquidity_for_1_nonliquidity<TakeCoinType, PutAsset: store, FundCoinType>(
@@ -667,7 +693,6 @@ module stingray::fund{
             fund.asset.assets.add(asset_type, liquidity);
         };
 
-        clear_if_less_than_threshold<PutCoinType, FundCoinType>(fund);
     }
 
     public fun put_1_nonliquidity_for_2_liquidity<TakeAsset: store, PutCoinType1, PutCoinType2, FundCoinType>(
@@ -704,15 +729,13 @@ module stingray::fund{
         };
 
         if (fund.asset.assets.contains(asset_type2)){
-            let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<PutCoinType2>>(asset_type1);
+            let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<PutCoinType2>>(asset_type2);
             fund_asset.join(liquidity2);
         }else{
             fund.asset.asset_types.push_back(asset_type2);
             fund.asset.assets.add(asset_type2, liquidity2);
         };
 
-        clear_if_less_than_threshold<PutCoinType1, FundCoinType>(fund);
-        clear_if_less_than_threshold<PutCoinType2, FundCoinType>(fund);
     }
     // settle 
     public fun settle_1_liquidity_for_1_liquidity< TakeCoinType, PutCoinType, FundCoinType>(
