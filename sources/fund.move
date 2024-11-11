@@ -122,6 +122,7 @@ module stingray::fund{
         is_settle: bool,
         share_info: ShareInfo,
         after_amount: u64,
+        expected_roi: u64,
     }
 
     public struct CreatedFund has copy, drop {
@@ -134,6 +135,8 @@ module stingray::fund{
         start_time: u64,
         invest_duration: u64,
         end_time: u64,
+        limit_amount: u64,
+        expected_roi: u64,
     }
 
     public struct Settled has copy, drop{
@@ -172,6 +175,7 @@ module stingray::fund{
         invest_duration: u64,
         end_time: u64,
         limit_amount: u64,
+        expected_roi: u64,
         coin: Coin<FundCoinType>,
         clock: &Clock,
         ctx: &mut TxContext,
@@ -220,6 +224,7 @@ module stingray::fund{
                 total_share: 0,
             },
             after_amount: 0,
+            expected_roi,
         };
 
         if (!fund.is_arena){
@@ -234,6 +239,8 @@ module stingray::fund{
                     start_time,
                     invest_duration,
                     end_time,
+                    limit_amount,
+                    expected_roi,
                 }
             );
         };
@@ -1146,25 +1153,25 @@ module stingray::fund{
     public fun invest_duration<CoinType>(
         fund: &Fund<CoinType>,
     ):u64{
-        fund.invest_duration()
+        fund.time.invest_duration
     }
 
     public fun trader_fee<CoinType>(
         fund: &Fund<CoinType>,
     ):u64{
-        fund.trader_fee()
+        fund.trader_fee
     }
 
     public fun fund_img<CoinType>(
         fund: &Fund<CoinType>,
     ):String{
-        fund.fund_img()
+        fund.fund_img
     }
 
     public fun name<CoinType>(
         fund: &Fund<CoinType>,
     ):String{
-        fund.name()
+        fund.name
     }
 
     public fun description<CoinType>(
