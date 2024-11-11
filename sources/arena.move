@@ -2,6 +2,7 @@ module stingray::arena{
 
     use std::{
         type_name::{Self, TypeName},
+        string::{String},
     };
 
     use sui::{
@@ -87,8 +88,16 @@ module stingray::arena{
     } 
 
     public struct Attended<phantom CoinType> has copy, drop{
-        fund_id: ID,
-        arena_id: ID,
+        arena: ID,
+        fund: ID,
+        name: String,
+        description: String, 
+        fund_img: String,
+        trader: ID,
+        trader_fee: u64,
+        start_time: u64,
+        invest_duration: u64,
+        end_time: u64,
     } 
     
     public struct Challenge has copy , drop{
@@ -263,8 +272,16 @@ module stingray::arena{
         
         event::emit(
             Attended<CoinType>{
-                fund_id: *fund.id().as_inner(),
-                arena_id: *arena.id.as_inner(),
+                arena: *arena.id.as_inner(),
+                fund: *fund.id().as_inner(),
+                name: fund.name(),
+                description: fund.description(), 
+                fund_img: fund.fund_img(),
+                trader: fund.trader(),
+                trader_fee: fund.trader_fee(),
+                start_time: fund.start_time(),
+                invest_duration: fund.invest_duration(),
+                end_time: fund.invest_duration(),
             },
         ); 
     }

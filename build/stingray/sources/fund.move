@@ -131,11 +131,9 @@ module stingray::fund{
         fund_img: String,
         trader: ID,
         trader_fee: u64,
-        trader_stake: u64,
         start_time: u64,
         invest_duration: u64,
         end_time: u64,
-        is_arena: bool,
     }
 
     public struct Settled has copy, drop{
@@ -144,8 +142,9 @@ module stingray::fund{
     }
 
     public struct Invested<phantom CoinType> has copy, drop{
-        investor: address, 
+        share: ID,
         fund: ID,
+        investor: address, 
         amount: u64,
     }
 
@@ -223,29 +222,22 @@ module stingray::fund{
             after_amount: 0,
         };
 
-        event::emit(
-            CreatedFund{
-                id: *fund.id.as_inner(),
-                name,
-                description,
-                fund_img,
-                trader: trader.id(),
-                trader_fee,
-                trader_stake: init_amount,
-                start_time,
-                invest_duration,
-                end_time,
-                is_arena,
-            }
-        );
+        if (!fund.is_arena){
+            event::emit(
+                CreatedFund{
+                    id: *fund.id.as_inner(),
+                    name,
+                    description,
+                    fund_img,
+                    trader: trader.id(),
+                    trader_fee,
+                    start_time,
+                    invest_duration,
+                    end_time,
+                }
+            );
+        };
 
-        event::emit(
-            Invested<FundCoinType>{
-                investor: ctx.sender(), 
-                fund: *fund.id.as_inner(),
-                amount: init_amount,
-            }
-        );
 
         // take mint share request
         let mut fund_type = string::utf8(b"Common");
@@ -261,6 +253,7 @@ module stingray::fund{
             fund_type, 
             init_amount, 
             fund.time.end_time);
+
 
         (fund, share_request)
     }
@@ -285,6 +278,7 @@ module stingray::fund{
 
         let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
         let invest_amount = invest_coin.value();
+        fund.base = fund.base + invest_amount;
         
         assert_if_base_over_limit<FundCoinType>(fund, (total_base.value() + invest_amount));
 
@@ -298,14 +292,6 @@ module stingray::fund{
         if (fund.is_arena){
             fund_type=string::utf8(b"Arena");
         };
-
-        event::emit(
-            Invested<FundCoinType>{
-                investor: ctx.sender(), 
-                fund: *fund.id.as_inner(),
-                amount: invest_amount,
-            }
-        );
 
         fund_share::create_mint_request(
             config,
@@ -1155,6 +1141,30 @@ module stingray::fund{
             );
             coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
         }
+    }
+
+    public fun invest_duration<CoinType>(
+        fund: &Fund<CoinType>,
+    ):u64{
+        fund.invest_duration()
+    }
+
+    public fun trader_fee<CoinType>(
+        fund: &Fund<CoinType>,
+    ):u64{
+        fund.trader_fee()
+    }
+
+    public fun fund_img<CoinType>(
+        fund: &Fund<CoinType>,
+    ):String{
+        fund.fund_img()
+    }
+
+    public fun name<CoinType>(
+        fund: &Fund<CoinType>,
+    ):String{
+        fund.name()
     }
 
     public fun description<CoinType>(

@@ -3,9 +3,9 @@ module stingray::fund_share{
         string::{String},
     };
     
-    // use sui::{
-    //     event::{Self, },
-    // };
+    use sui::{
+        event::{Self, },
+    };
 
     public struct FundShare has key, store {
         id: UID,
@@ -14,6 +14,13 @@ module stingray::fund_share{
         fund_type: String,
         invest_amount: u64,
         end_time: u64,
+    }
+
+    public struct Invested has copy, drop{
+        share_id: ID,
+        fund_id: ID,
+        invest_amount: u64,
+        investor: address,
     }
 
     // hot potato
@@ -134,14 +141,23 @@ module stingray::fund_share{
             end_time,
         } = request;
 
-        FundShare{
+        let share = FundShare{
             id: object::new(ctx),
             fund_id,
             trader,
             fund_type,
             invest_amount,
             end_time
-        }
+        };
+
+        event::emit(Invested{
+            share_id: *share.id.as_inner(),
+            fund_id: share.fund_id,
+            invest_amount: share.invest_amount,
+            investor: ctx.sender(),
+        });
+
+        share
     }
 
     public fun burn<FundCoinType>(
