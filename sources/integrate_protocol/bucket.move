@@ -20,16 +20,20 @@ module stingray::bucket{
 
     public struct Deposited has copy, drop{
         protocol: String,
-        coin_type: TypeName,
-        amount: u64,
+        input_type: TypeName,
+        in_amount: u64,
+        output_type: TypeName,
+        output_amount: u64,
     }
 
     public struct Withdrawed has copy, drop{
         protocol: String,
-        coin_type1: TypeName,
-        amount1: u64,
-        coin_type2: TypeName,
-        amount2: u64,
+        input_type: TypeName,
+        in_amount: u64,
+        output_type1: TypeName,
+        output_amount1: u64,
+        output_type2: TypeName,
+        output_amount2: u64,
     }
 
     // 1. Deposit BUCK in exchange for sBUCK
@@ -52,8 +56,10 @@ module stingray::bucket{
         event::emit(
             Deposited{
                 protocol: string::utf8(b"Bucket"),
-                coin_type: type_name::get<BUCK>(),
-                amount: buck_amount,
+                input_type: type_name::get<BUCK>(),
+                in_amount: buck_amount,
+                output_type: type_name::get<StakeProof<SBUCK, SUI>>(),
+                output_amount: 1,
             }
         );
 
@@ -76,10 +82,12 @@ module stingray::bucket{
         event::emit(
             Withdrawed{
                 protocol: string::utf8(b"Bucket"),
-                coin_type1: type_name::get<BUCK>(),
-                amount1: buck.value(),
-                coin_type2: type_name::get<SUI>(),
-                amount2: reward_bal.value(),
+                input_type: type_name::get<StakeProof<SBUCK, SUI>>(),
+                in_amount: 1,
+                output_type1: type_name::get<BUCK>(),
+                output_amount1: buck.value(),
+                output_type2: type_name::get<SUI>(),
+                output_amount2: reward_bal.value(),
             }
         );
         

@@ -20,14 +20,18 @@ module stingray::scallop{
 
     public struct Deposited has copy, drop{
         protocol: String,
-        coin_type: TypeName,
-        amount: u64,
+        input_type: TypeName,
+        in_amount: u64,
+        output_type: TypeName,
+        output_amount: u64,
     }
 
     public struct Withdrawed has copy, drop{
         protocol: String,
-        coin_type: TypeName,
-        amount: u64,
+        input_type: TypeName,
+        in_amount: u64,
+        output_type: TypeName,
+        output_amount: u64,
     }
 
     public fun deposit<X>(
@@ -39,13 +43,7 @@ module stingray::scallop{
         ctx: &mut TxContext
     ):Coin<MarketCoin<X>>{
 
-        event::emit(
-            Deposited{
-                protocol: string::utf8(b"Scallop"),
-                coin_type: type_name::get<X>(),
-                amount: coin.value(),
-            }
-        );  
+        let input_value = coin.value();
 
         let output = mint::mint(
             version,
@@ -56,6 +54,17 @@ module stingray::scallop{
         );
 
         request.supported_defi_confirm_1l_for_1l(output.value());
+
+        event::emit(
+            Deposited{
+                protocol: string::utf8(b"Scallop"),
+                input_type: type_name::get<X>(),
+                in_amount: input_value,
+                output_type: type_name::get<MarketCoin<X>>(),
+                output_amount: output.value(),
+            }
+        );  
+
         output
     }
 
@@ -67,6 +76,8 @@ module stingray::scallop{
         clock: &Clock,
         ctx: &mut TxContext
     ):Coin<X>{
+        let input_value = coin.value();
+        
         let output = redeem::redeem(
             version,
             market,
@@ -80,8 +91,10 @@ module stingray::scallop{
         event::emit(
             Withdrawed{
                 protocol: string::utf8(b"Scallop"),
-                coin_type: type_name::get<X>(),
-                amount: output.value(),
+                input_type: type_name::get<MarketCoin<X>>(),
+                in_amount: input_value,
+                output_type: type_name::get<X>(),
+                output_amount: output.value(),
             }
         );
 
