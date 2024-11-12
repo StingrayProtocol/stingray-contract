@@ -38,6 +38,7 @@ module stingray::arena{
     const EAttendTimeExpired: u64 = 8;
     const EAlreadyAttendAnotherArena: u64 = 9;
     const EArenaTypeNotDefined: u64 = 10;
+    const EOverEndTime: u64 = 11;
 
     const BASE: u128 = 1_000_000_000;
     const RANK_AMOUNT: u64 = 3;
@@ -76,6 +77,7 @@ module stingray::arena{
         arena_type: u8,
         end_time: u64, 
         rank: u64,
+        is_matched: bool,
     }
 
     public struct NewArena<phantom CoinType> has copy, drop{
@@ -290,9 +292,11 @@ module stingray::arena{
         arena: &mut Arena<CoinType>,
         fund: &mut Fund<CoinType>,
         trader: &Trader,
+        clock: &Clock,
     ){
         assert_if_fund_trader_not_matched(fund, trader);
         assert_if_trader_not_attended_arena(arena, trader);
+        assert_if_over_end_time<CoinType>(arena, clock);
 
         let mut result = 0;
 
@@ -390,6 +394,7 @@ module stingray::arena{
             arena_type: arena.arena_type,
             end_time: arena.end_time,
             rank: 0,
+            is_matched: false,
         }
     }   
 
@@ -461,6 +466,13 @@ module stingray::arena{
         arena_type: u8,
     ){
         assert!(arena_type == WEEK || arena_type == MONTH || arena_type == SEASON || arena_type == YEAR, EArenaTypeNotDefined);
+    }
+
+    fun assert_if_over_end_time<ArenaType>(
+        arena: &Arena<ArenaType>,
+        clock: &Clock,
+    ){  
+        assert!(clock.timestamp_ms() <= arena.end_time, EOverEndTime);
     }
 
     #[test_only]

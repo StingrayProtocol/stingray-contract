@@ -47,6 +47,8 @@ module stingray::fund{
     const EOverFundLimitAmount: u64 = 21;
     const EOperationTimeNotArrived: u64 = 22;
     const EStartTimeOverCurrentTime: u64 = 23;
+    const EAlreadySettled: u64 = 24;
+
     
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -366,6 +368,7 @@ module stingray::fund{
         assert_if_trader_not_matched<FundCoinType>(fund, trader);
         assert_if_take_liquidity_not_in_fund<TakeCoinType, FundCoinType>(fund);
         assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        assert_if_is_settled(fund);
         
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
@@ -399,6 +402,7 @@ module stingray::fund{
         assert_if_trader_not_matched<FundCoinType>(fund, trader);
         assert_if_take_liquidity_not_in_fund<TakeCoinType, FundCoinType>(fund);
         assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        assert_if_is_settled(fund);
         
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
@@ -433,6 +437,7 @@ module stingray::fund{
         assert_if_trader_not_matched<FundCoinType>(fund, trader);
         assert_if_take_liquidity_not_in_fund<TakeCoinType, FundCoinType>(fund);
         assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        assert_if_is_settled(fund);
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
         let total_value = total_balance.value();
@@ -467,6 +472,7 @@ module stingray::fund{
         assert_if_take_liquidity_not_in_fund<TakeCoinType, FundCoinType>(fund);
         assert_if_take_nonliquidity_not_in_fund<TakeAsset, FundCoinType>(fund);
         assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        assert_if_is_settled(fund);
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
         let total_value = total_balance.value();
@@ -501,6 +507,7 @@ module stingray::fund{
         assert_if_take_action_not_available<FundCoinType>(fund, clock);
         assert_if_trader_not_matched<FundCoinType>(fund, trader);
         assert_if_take_nonliquidity_not_in_fund<TakeAsset, FundCoinType>(fund);
+        assert_if_is_settled(fund);
 
          let asset_type = type_name::get<TakeAsset>();
         let take_asset = fund.asset.assets.remove<TypeName, TakeAsset>(asset_type);
@@ -529,6 +536,7 @@ module stingray::fund{
         assert_if_take_action_not_available<FundCoinType>(fund, clock);
         assert_if_trader_not_matched<FundCoinType>(fund, trader);
         assert_if_take_nonliquidity_not_in_fund<TakeAsset, FundCoinType>(fund);
+        assert_if_is_settled(fund);
 
         let asset_type = type_name::get<TakeAsset>();
         let take_asset = fund.asset.assets.remove<TypeName, TakeAsset>(asset_type);
@@ -1444,6 +1452,12 @@ module stingray::fund{
         clock: &Clock,
     ){
         assert!(clock.timestamp_ms() >= fund.time.start_time + fund.time.invest_duration, EOperationTimeNotArrived);
+    }
+
+    fun assert_if_is_settled<FundCoinType>(
+        fund: &Fund<FundCoinType>,
+    ){
+        assert!(!fund.is_settle, EAlreadySettled);
     }
 
     fun pay_platforem_fee<CoinType>(
