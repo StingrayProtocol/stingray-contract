@@ -20,6 +20,7 @@ module stingray::bucket{
 
     public struct Deposited has copy, drop{
         protocol: String,
+        fund: ID,
         input_type: TypeName,
         in_amount: u64,
         output_type: TypeName,
@@ -28,6 +29,7 @@ module stingray::bucket{
 
     public struct Withdrawed has copy, drop{
         protocol: String,
+        fund: ID,
         input_type: TypeName,
         in_amount: u64,
         output_type1: TypeName,
@@ -56,6 +58,7 @@ module stingray::bucket{
         event::emit(
             Deposited{
                 protocol: string::utf8(b"Bucket"),
+                fund: request.fund_id_of_1l_for_1nl_req(),
                 input_type: type_name::get<BUCK>(),
                 in_amount: buck_amount,
                 output_type: type_name::get<StakeProof<SBUCK, SUI>>(),
@@ -82,6 +85,7 @@ module stingray::bucket{
         event::emit(
             Withdrawed{
                 protocol: string::utf8(b"Bucket"),
+                fund: request.fund_id_of_1nl_for_2l_req(),
                 input_type: type_name::get<StakeProof<SBUCK, SUI>>(),
                 in_amount: 1,
                 output_type1: type_name::get<BUCK>(),

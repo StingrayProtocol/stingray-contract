@@ -16,6 +16,7 @@ module stingray::cetus{
 
     public struct Swap has copy, drop{
         protocol: String,
+        fund: ID,
         input_coin_type: TypeName,
         input_amount: u64,
         output_coin_type: TypeName,
@@ -95,6 +96,7 @@ module stingray::cetus{
         
         event::emit(Swap{
             protocol: string::utf8(b"Cetus"),
+            fund: request.fund_id_of_1l_for_1l_req(),
             input_coin_type,
             input_amount: input_amount,
             output_coin_type,

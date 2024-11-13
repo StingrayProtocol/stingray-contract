@@ -20,6 +20,7 @@ module stingray::scallop{
 
     public struct Deposited has copy, drop{
         protocol: String,
+        fund: ID,
         input_type: TypeName,
         in_amount: u64,
         output_type: TypeName,
@@ -28,6 +29,7 @@ module stingray::scallop{
 
     public struct Withdrawed has copy, drop{
         protocol: String,
+        fund: ID,
         input_type: TypeName,
         in_amount: u64,
         output_type: TypeName,
@@ -58,6 +60,7 @@ module stingray::scallop{
         event::emit(
             Deposited{
                 protocol: string::utf8(b"Scallop"),
+                fund: request.fund_id_of_1l_for_1l_req(),
                 input_type: type_name::get<X>(),
                 in_amount: input_value,
                 output_type: type_name::get<MarketCoin<X>>(),
@@ -91,6 +94,7 @@ module stingray::scallop{
         event::emit(
             Withdrawed{
                 protocol: string::utf8(b"Scallop"),
+                fund: request.fund_id_of_1l_for_1l_req(),
                 input_type: type_name::get<MarketCoin<X>>(),
                 in_amount: input_value,
                 output_type: type_name::get<X>(),

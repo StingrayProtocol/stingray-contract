@@ -18,6 +18,7 @@ module stingray::suilend{
 
     public struct Deposited has copy, drop{
         protocol: String,
+        fund: ID,
         input_type: TypeName,
         in_amount: u64,
         output_type: TypeName,
@@ -26,6 +27,7 @@ module stingray::suilend{
 
     public struct Withdrawed has copy, drop{
         protocol: String,
+        fund: ID,
         input_type: TypeName,
         in_amount: u64,
         output_type: TypeName,
@@ -49,6 +51,7 @@ module stingray::suilend{
         event::emit(
             Deposited{
                 protocol: string::utf8(b"Suilend"),
+                fund: request.fund_id_of_1l_for_1l_req(),
                 input_type: type_name::get<X>(),
                 in_amount: input_value,
                 output_type: type_name::get<CToken<P, X>>(),
@@ -76,6 +79,7 @@ module stingray::suilend{
         event::emit(
             Withdrawed{
                 protocol: string::utf8(b"Suilend"),
+                fund: request.fund_id_of_1l_for_1l_req(),
                 input_type: type_name::get<CToken<P, X>>(),
                 in_amount: input_value,
                 output_type: type_name::get<X>(),

@@ -1240,6 +1240,42 @@ module stingray::fund{
         fund.time.start_time
     }
 
+    public (package) fun fund_id_of_1l_for_1l_req<TakeCoinType, PutCoinType>(
+        request: &Take_1_Liquidity_For_1_Liquidity_Request<TakeCoinType, PutCoinType>,
+    ): ID{
+        request.fund
+    }
+
+    public (package) fun fund_id_of_1l_for_2l_req<TakeCoinType, PutCoinType1, PutCoinType2>(
+        request: &Take_1_Liquidity_For_2_Liquidity_Request<TakeCoinType, PutCoinType1, PutCoinType2>,
+    ): ID{
+        request.fund
+    }
+
+    public (package) fun fund_id_of_1l_for_1nl_req<TakeCoinType, PutAsset>(
+        request: &Take_1_Liquidity_For_1_NonLiquidity_Request<TakeCoinType, PutAsset>,
+    ): ID{
+        request.fund
+    }
+
+    public (package) fun fund_id_of_1l_1nl_for_1nl_req<TakeCoinType, TakeAsset, PutAsset>(
+        request: &Take_1_Liquidity_1_NonLiquidity_For_1_NonLiquidity_Request<TakeCoinType, TakeAsset, PutAsset>,
+    ): ID{
+        request.fund
+    }
+
+    public (package) fun fund_id_of_1nl_for_1l_req<TakeAsset, PutCoinType>(
+        request: &Take_1_NonLiquidity_For_1_Liquidity_Request<TakeAsset, PutCoinType>,
+    ): ID{
+        request.fund
+    }
+
+    public (package) fun fund_id_of_1nl_for_2l_req<TakeAsset, PutCoinType1, PutCoinType2>(
+        request: &Take_1_NonLiquidity_For_2_Liquidity_Request<TakeAsset, PutCoinType1, PutCoinType2>,
+    ): ID{
+        request.fund
+    }
+
     public(package) fun id <CoinType>(
         fund: &mut Fund<CoinType>
     ): &mut UID{
