@@ -45,6 +45,7 @@ module stingray::arena{
     const EOverEndTime: u64 = 10;
     const EHostNotForThisArena: u64 = 11;
     const EAlreadyClaimed: u64 = 12;
+    const ENotArrivedEndTime:u64 = 13;
 
     const BASE: u128 = 1_000_000_000;
     const RANK_AMOUNT: u64 = 3;
@@ -371,12 +372,14 @@ module stingray::arena{
         arena: &mut Arena<CoinType>,
         fund: &mut Fund<CoinType>,
         trader: &mut Trader,
+        clock: &Clock,
         ctx: &mut TxContext,
     ): Coin<CoinType>{
         assert_if_host_not_for_this_arena(host, arena);
         assert_if_fund_trader_not_matched(fund, trader);
         assert_if_trader_not_attended_arena(arena, trader);
         assert_if_already_claimed(host, trader);
+        assert_if_not_arrived_end_time(arena, clock);
 
         let first = arena.result.borrow(0);
         let second = arena.result.borrow(1);
@@ -505,6 +508,13 @@ module stingray::arena{
         trader: &Trader,
     ){
         assert!(!host.is_claimed.contains(trader.id()), EAlreadyClaimed);
+    }
+
+    fun assert_if_not_arrived_end_time<FundCoinType>(
+        arena: &Arena<FundCoinType>,
+        clock: &Clock,
+    ){
+        assert!(arena.end_time < clock.timestamp_ms(), ENotArrivedEndTime);
     }
 
 }
