@@ -8,7 +8,6 @@ module stingray::fund{
         coin::{ Self, Coin},
         balance::{Self, Balance},
         bag::{Self, Bag},
-        table::{Self, Table},
         clock::{Clock},
         event::{Self,},
     };
@@ -33,23 +32,19 @@ module stingray::fund{
     const EEndTimeNotBiggerThanStartTime:u64 = 7;
     const ELessThanMinDuration: u64 = 8;
     const ETraderNotMatched: u64 = 9;
-    const ENotInInvestorList: u64 = 10;
-    const ENotArrivedSettleTime: u64 = 11;
-    const ESettleNotFinished: u64 = 12;
-    const EFundHasNonBaseAsset: u64 = 13;
-    const EBaseTypeNotMatched: u64 = 14;
-    const ENotSettle: u64 = 15;
-    const EOverInvestTime: u64 = 16;
-    const ENotArrivedInvestTime: u64 = 17;
-    const EAssetNotInAssetArray: u64 = 18;
-    const ETraderInitBalanceNeedToOverThreshold: u64 = 19;
-    const EInitValueOverLimit: u64 = 20;
-    const EOverFundLimitAmount: u64 = 21;
-    const EOperationTimeNotArrived: u64 = 22;
-    const EStartTimeOverCurrentTime: u64 = 23;
-    const EAlreadySettled: u64 = 24;
+    const ESettleNotFinished: u64 = 10;
+    const EFundHasNonBaseAsset: u64 = 11;
+    const EBaseTypeNotMatched: u64 = 12;
+    const ENotSettle: u64 = 13;
+    const EOverInvestTime: u64 = 14;
+    const ENotArrivedInvestTime: u64 = 15;
+    const EAssetNotInAssetArray: u64 = 16;
+    const ETraderInitBalanceNeedToOverThreshold: u64 = 17;
+    const EInitValueOverLimit: u64 = 18;
+    const EOverFundLimitAmount: u64 = 19;
+    const EOperationTimeNotArrived: u64 = 20;
+    const EAlreadySettled: u64 = 21;
 
-    
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
         fund: ID,
@@ -103,11 +98,7 @@ module stingray::fund{
         invest_duration: u64,
         end_time: u64, 
     }
-
-    public struct ShareInfo has store {
-        investor: Table<address, u64>,
-        total_share: u64,
-    }
+    
 
     public struct Fund<phantom CoinType> has key {
         id: UID,
@@ -122,9 +113,15 @@ module stingray::fund{
         is_arena: bool,
         limit_amount: u64,
         is_settle: bool,
-        share_info: ShareInfo,
+        share_amount: u64,
         after_amount: u64,
         expected_roi: u64,
+    }
+
+    public struct SettleResult has copy, drop{
+        fund: ID,
+        trader: ID,
+        is_matched_roi: bool,
     }
 
     public struct CreatedFund has copy, drop {
@@ -144,13 +141,6 @@ module stingray::fund{
     public struct Settled has copy, drop{
         fund: ID,
         is_finished: bool,
-    }
-
-    public struct Invested<phantom CoinType> has copy, drop{
-        share: ID,
-        fund: ID,
-        investor: address, 
-        amount: u64,
     }
 
     public struct TraderClaimed<phantom CoinType> has copy, drop{
@@ -179,7 +169,6 @@ module stingray::fund{
         limit_amount: u64,
         expected_roi: u64,
         coin: Coin<FundCoinType>,
-        clock: &Clock,
         ctx: &mut TxContext,
     ): (Fund<FundCoinType>, MintRequest<FundCoinType>){
         
@@ -221,10 +210,7 @@ module stingray::fund{
             is_arena,
             limit_amount,
             is_settle: false,
-            share_info: ShareInfo{
-                investor: table::new<address, u64>(ctx),
-                total_share: 0,
-            },
+            share_amount: 0,
             after_amount: 0,
             expected_roi,
         };
@@ -279,7 +265,6 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
         invest_coin: Coin<FundCoinType>,
         clock: &Clock,
-        ctx: &mut TxContext,
     ): MintRequest<FundCoinType>{
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_over_invest_duration(fund, clock);
@@ -301,6 +286,8 @@ module stingray::fund{
         if (fund.is_arena){
             fund_type=string::utf8(b"Arena");
         };
+
+        fund.share_amount = fund.share_amount + invest_amount;
 
         fund_share::create_mint_request(
             config,
@@ -327,6 +314,7 @@ module stingray::fund{
         
         let mut total_share = shares.pop_back();
         let loop_times = shares.length() - 1;
+        fund.share_amount = fund.share_amount - total_share.invest_amount();
         
         let mut current_idx = 0;
         while(current_idx < loop_times){
@@ -724,8 +712,8 @@ module stingray::fund{
 
         assert_if_put_amount_is_zero(put_amount1);
         assert_if_put_amount_is_zero(put_amount2);
-        assert_if_put_liquidity_not_equal_to_put_amount(put_amount1, liquidity1.value());
-        assert_if_put_liquidity_not_equal_to_put_amount(put_amount2, liquidity2.value());
+        // check one of these asset
+        assert_if_put_liquidity_not_equal_to_put_amount(put_amount1, liquidity2.value());      
 
         let asset_type1 = type_name::get<Balance<PutCoinType1>>();
         let asset_type2 = type_name::get<Balance<PutCoinType2>>();
@@ -790,9 +778,9 @@ module stingray::fund{
         request: Take_1_Liquidity_For_2_Liquidity_Request<TakeCoinType, PutCoinType1, PutCoinType2>,
         liquidity1: Balance<PutCoinType1>,
         liquidity2: Balance<PutCoinType2>,
-        mut settle_request: SettleRequest,
+        settle_request: &mut SettleRequest,
         is_finished: bool,
-    ): SettleRequest{
+    ){
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -832,17 +820,17 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
-        settle_request
     }
+
 
     public fun settle_1_liquidity_for_1_nonliquidity<TakeCoinType, PutAsset: store, FundCoinType>(
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
         request: Take_1_Liquidity_For_1_NonLiquidity_Request<TakeCoinType, PutAsset>,
         nonliquidity: PutAsset,
-        mut settle_request: SettleRequest,
+        settle_request: &mut SettleRequest,
         is_finished: bool,
-    ): SettleRequest{
+    ){
         
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -861,7 +849,6 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
-        settle_request
     }
     
 
@@ -870,9 +857,9 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
         request: Take_1_Liquidity_1_NonLiquidity_For_1_NonLiquidity_Request<TakeCoinType, TakeAsset, PutAsset>,
         nonliquidity: PutAsset,
-        mut settle_request: SettleRequest,
+        settle_request: &mut SettleRequest,
         is_finished: bool,
-    ): SettleRequest{
+    ){
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -892,7 +879,6 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
-        settle_request
     }
 
     public fun settle_1_nonLiquidity_for_1_liquidity<TakeAsset: store, PutCoinType, FundCoinType>(
@@ -900,9 +886,9 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
         request: Take_1_NonLiquidity_For_1_Liquidity_Request<TakeAsset, PutCoinType>,
         liquidity: Balance<PutCoinType>,
-        mut settle_request: SettleRequest,
+        settle_request: &mut SettleRequest,
         is_finished: bool,
-    ): SettleRequest{
+    ){
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -929,7 +915,6 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
-        settle_request
     }
 
     public fun settle_1_nonliquidity_for_2_liquidity<TakeAsset: store, PutCoinType1, PutCoinType2, FundCoinType>(
@@ -938,9 +923,9 @@ module stingray::fund{
         request: Take_1_NonLiquidity_For_2_Liquidity_Request<TakeAsset, PutCoinType1, PutCoinType2>,
         liquidity1: Balance<PutCoinType1>,
         liquidity2: Balance<PutCoinType2>,
-        mut settle_request: SettleRequest,
+        settle_request: &mut SettleRequest,
         is_finished: bool,
-    ): SettleRequest{
+    ){
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -980,21 +965,17 @@ module stingray::fund{
         
         // update settle request
         settle_request.is_finished = is_finished;
-        settle_request
     }
 
     public fun create_settle_request< FundCoinType>(
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
         is_finished: bool,
-        clock: &Clock,
+        _share: &FundShare,
         ctx: &TxContext,
     ): SettleRequest{
         
         config::assert_if_version_not_matched(config, VERSION);
-
-        assert_if_not_arrived_end_time(fund, clock);
-        assert_if_settler_not_fund_investor<FundCoinType>(fund, ctx);
         
         SettleRequest{
             fund: *fund.id.as_inner(),
@@ -1003,6 +984,16 @@ module stingray::fund{
         }
     }
 
+    public fun finish_settle_request(
+        config: &GlobalConfig,
+        settle_request: &mut SettleRequest,
+    ){
+
+        config::assert_if_version_not_matched(config, VERSION);
+        settle_request.is_finished = true;
+
+    }
+    
     public fun settle<FundCoinType>(
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
@@ -1012,6 +1003,8 @@ module stingray::fund{
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_not_finished(&request);
         assert_if_fund_has_nonbasic_asset(fund);
+
+        let fund_id = *fund.id.as_inner();
 
         let SettleRequest{
             fund: _,
@@ -1031,10 +1024,29 @@ module stingray::fund{
         // calculate rewards
         let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value();
         let fund_base = fund.base;
+        let expected_base = fund_base * fund.expected_roi /config.base_percentage();
         fund.after_amount = total_base;
         if (total_base > fund_base){
             if (fund.base < config.min_rewards()){
                 pay_platforem_fee(config, fund, (total_base - fund_base), ctx);
+                
+                if(total_base >= expected_base){
+                    event::emit(
+                        SettleResult{
+                            fund: fund_id,
+                            trader: fund.trader(),
+                            is_matched_roi: true,
+                        }
+                    );
+                }else{
+                    event::emit(
+                        SettleResult{
+                            fund: fund_id,
+                            trader: fund.trader(),
+                            is_matched_roi: false,
+                        }
+                    );
+                };
                 coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
             }else{
                 let total = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
@@ -1043,6 +1055,15 @@ module stingray::fund{
                 let to_settler_value = (reward_amount - platform_fee) *  config.settle_percentage() / config.base_percentage();
                 let to_settle_balance = total.split(to_settler_value);
                 pay_platforem_fee(config, fund, platform_fee, ctx);
+
+                event::emit(
+                    SettleResult{
+                        fund: fund_id,
+                        trader: fund.trader(),
+                        is_matched_roi: false,
+                    }
+                );
+
                 coin::from_balance<FundCoinType>(to_settle_balance, ctx)
             }
         }else{
@@ -1060,19 +1081,14 @@ module stingray::fund{
 
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_not_settle(fund);
-        let value = fund.share_info.investor.remove(ctx.sender());
-        let share_amount = shares.invest_amount();
-
-        if (value != shares.invest_amount()){
-            fund.share_info.investor.add(ctx.sender(), value - shares.invest_amount());
-        };
+        let owned_share_amount = shares.invest_amount();
         
         let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
         fund_share::burn<FundCoinType>(config, burn_request, shares);
         
         if (fund.after_amount < fund.base ){
             let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-            let withdraw_amount = fund.after_amount * share_amount / fund.share_info.total_share;
+            let withdraw_amount = fund.after_amount * owned_share_amount / fund.share_amount;
 
             event::emit(
                 Claimed<FundCoinType>{
@@ -1088,7 +1104,7 @@ module stingray::fund{
                 let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
                 let platform_fee = (fund.after_amount - fund.base) * config.platform_fee() / config.base_percentage();
                 let trader_fee = (fund.after_amount - fund.base) * fund.trader_fee / config.base_percentage();
-                let investor_amount = (fund.after_amount - platform_fee - trader_fee) * share_amount / fund.share_info.total_share;
+                let investor_amount = (fund.after_amount - platform_fee - trader_fee) * owned_share_amount / fund.share_amount;
                 let to_investor_balance = total_asset.split<FundCoinType>(investor_amount);
 
                 event::emit(
@@ -1101,7 +1117,7 @@ module stingray::fund{
                 coin::from_balance<FundCoinType>(to_investor_balance, ctx)
             }else{
                 let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-                let final_amount = fund.base * share_amount / fund.share_info.total_share;
+                let final_amount = fund.base * owned_share_amount / fund.share_amount;
                 
                 event::emit(
                     Claimed<FundCoinType>{
@@ -1356,31 +1372,11 @@ module stingray::fund{
         assert!(invest_duration >= 3600000, ELessThanMinDuration);
     }
 
-    fun assert_if_over_current_time(
-        start_time: u64,
-        clock: &Clock,
-    ){
-        assert!(start_time >= clock.timestamp_ms(), EStartTimeOverCurrentTime);
-    }
-
     fun assert_if_trader_not_matched<FundCoinType>(
         fund: &Fund<FundCoinType>,
         trader: &Trader,
     ){
         assert!(trader.id() == fund.trader, ETraderNotMatched);
-    }
-
-    fun assert_if_settler_not_fund_investor<FundCoinType>(
-        fund: &Fund<FundCoinType>,
-        ctx: &TxContext,
-    ){
-        assert!(fund.share_info.investor.contains(ctx.sender()), ENotInInvestorList);
-    }
-    fun assert_if_not_arrived_end_time<FundCoinType>(
-        fund: &Fund<FundCoinType>,
-        clock: &Clock,
-    ){
-        assert!(fund.time.end_time <= clock.timestamp_ms(), ENotArrivedSettleTime);
     }
 
     fun assert_if_not_finished(

@@ -6,12 +6,12 @@ module stingray::arena{
     };
 
     use sui::{
-        sui::{SUI},
-        balance::{Self, Balance},
+        balance::{Balance},
         table::{Self, Table,},
         clock:: {Clock},
         dynamic_field as df,
         event::{Self,},
+        coin::{Self, Coin},
     };
 
     use stingray::{
@@ -27,18 +27,24 @@ module stingray::arena{
     const SEASON:u8 = 2;
     const YEAR: u8 = 4;
 
+    const FIRST_PLACE: u64 = 5000;
+    const SECOND_PLACE: u64 = 3000;
+    const THIRD_PLACE: u64 = 2000;
+
+
     const ETraderAlreadyAttended: u64 = 0;
     const ETypeNotMatched: u64 = 1;
     const EArenaTypeNotAllowed: u64 = 2;
-    const EStartTimeOverCurrentTime: u64 = 3;
-    const ENotArriveAttendTime: u64 = 4;
-    const ETraderNotMatched: u64 = 5;
-    const EPreviousFund: u64 = 6;
-    const ETraderNotAttended: u64 = 7;
-    const EAttendTimeExpired: u64 = 8;
-    const EAlreadyAttendAnotherArena: u64 = 9;
-    const EArenaTypeNotDefined: u64 = 10;
-    const EOverEndTime: u64 = 11;
+    const ENotArriveAttendTime: u64 = 3;
+    const ETraderNotMatched: u64 = 4;
+    const EPreviousFund: u64 = 5;
+    const ETraderNotAttended: u64 = 6;
+    const EAttendTimeExpired: u64 = 7;
+    const EAlreadyAttendAnotherArena: u64 = 8;
+    const EArenaTypeNotDefined: u64 = 9;
+    const EOverEndTime: u64 = 10;
+    const EHostNotForThisArena: u64 = 11;
+    const EAlreadyClaimed: u64 = 12;
 
     const BASE: u128 = 1_000_000_000;
     const RANK_AMOUNT: u64 = 3;
@@ -47,11 +53,11 @@ module stingray::arena{
         arena_type: u8,
     }
 
-    public struct ArenaHost<phantom CoinType> has key {
+    public struct BonusHost<phantom CoinType> has key {
         id: UID,
-        balance: Balance<CoinType>,
-        current_week_round: u64,
-        current_month_round: u64,
+        arena: ID,
+        bonus: Balance<CoinType>,
+        is_claimed: Table<ID, bool>,
     }
 
     public struct Result has store{
@@ -114,18 +120,6 @@ module stingray::arena{
         rank: u64,
     }
 
-
-    fun init (ctx: &mut TxContext){
-        let host = ArenaHost<SUI> {
-            id: object::new(ctx),
-            balance:  balance::zero<SUI>(),
-            current_week_round: 0,
-            current_month_round: 0,
-        };
-
-        transfer::share_object(host);
-    }
-
     public entry fun new_arena <CoinType>(
         config: &GlobalConfig,
         cap: &AdminCap,
@@ -133,7 +127,7 @@ module stingray::arena{
         start_time: u64,
         attend_duration: u64,
         invest_duration: u64,
-        clock: &Clock,
+        init_bouns: Coin<CoinType>,
         ctx: &mut TxContext
     ){
         let arena = create_arena<CoinType>(
@@ -143,7 +137,6 @@ module stingray::arena{
             start_time,
             attend_duration,
             invest_duration,
-            clock,
             ctx,
         );
         
@@ -157,7 +150,24 @@ module stingray::arena{
                 end_time: arena.end_time,
             },
         );
+
+        let host = BonusHost<CoinType> {
+            id: object::new(ctx),
+            arena: *arena.id.as_inner(),
+            bonus: init_bouns.into_balance(),
+            is_claimed: table::new<ID, bool>(ctx),
+        };
+
+        transfer::share_object(host);
         transfer::share_object(arena);
+        
+    }
+
+    public entry fun sponsor_bonus<CoinType>(
+        host: &mut BonusHost<CoinType>,
+        sponsor_bonus: Coin<CoinType>,
+    ){
+        host.bonus.join(sponsor_bonus.into_balance<CoinType>());
     }
 
     public fun create_arena_request<CoinType>(
@@ -174,7 +184,6 @@ module stingray::arena{
         start_time: u64,
         attend_duration: u64,
         invest_duration: u64,
-        clock: &Clock,
         ctx: &mut TxContext
     ): Arena<CoinType> {
 
@@ -352,12 +361,17 @@ module stingray::arena{
     }
 
     public fun claim_rank<CoinType>(
+        config: &GlobalConfig,
+        host: &mut BonusHost<CoinType>,
         arena: &mut Arena<CoinType>,
         fund: &mut Fund<CoinType>,
         trader: &mut Trader,
-    ){
+        ctx: &mut TxContext,
+    ): Coin<CoinType>{
+        assert_if_host_not_for_this_arena(host, arena);
         assert_if_fund_trader_not_matched(fund, trader);
         assert_if_trader_not_attended_arena(arena, trader);
+        assert_if_already_claimed(host, trader);
 
         let first = arena.result.borrow(0);
         let second = arena.result.borrow(1);
@@ -365,17 +379,22 @@ module stingray::arena{
 
         let certificate = df::borrow_mut<ID, Certificate>(&mut arena.id, *fund.id().as_inner());
         let mut rank = 0;
+        let mut receive_value: u64 = 0;
         if (trader.id() == first.trader){
             certificate.rank = 1;
             rank = 1;
+            receive_value = host.bonus.value() * FIRST_PLACE / config.base_percentage();
         }else if (trader.id() == second.trader){
             certificate.rank = 2;
             rank = 2;
+            receive_value = host.bonus.value() * SECOND_PLACE / config.base_percentage();
         }else if (trader.id() == third.trader){
             certificate.rank = 3;
             rank = 3;
-        }; 
-
+            receive_value = host.bonus.value() * THIRD_PLACE / config.base_percentage();
+        };
+        
+        host.is_claimed.add(trader.id(), true);
         event::emit(
             ClaimRank{
                 trader: trader.id(),
@@ -384,6 +403,8 @@ module stingray::arena{
                 rank,
             }
         );
+
+        coin::from_balance(host.bonus.split(receive_value), ctx)
     }
 
     fun create_certificate<CoinType>(
@@ -417,14 +438,6 @@ module stingray::arena{
     ){
         assert!(arena_type == WEEK || arena_type == MONTH, EArenaTypeNotAllowed);
     }
-
-    fun assert_if_over_current_time(
-        start_time: u64,
-        clock: &Clock,
-    ){
-        assert!(start_time >= clock.timestamp_ms(), EStartTimeOverCurrentTime);
-    }
-
 
     fun assert_if_not_arrive_attend_time<ArenaCoinType>(
         arena: &Arena<ArenaCoinType>,
@@ -475,11 +488,18 @@ module stingray::arena{
         assert!(clock.timestamp_ms() <= arena.end_time, EOverEndTime);
     }
 
-    #[test_only]
-    public(package) fun test_init(
-        ctx: &mut TxContext,
+    fun assert_if_host_not_for_this_arena<CoinType>(
+        host: & BonusHost<CoinType>,
+        arena: & Arena<CoinType>,
     ){
-        init(ctx);
+        assert!(host.arena == *arena.id.as_inner(), EHostNotForThisArena);
+    }
+
+    fun assert_if_already_claimed<CoinType>(
+        host: & BonusHost<CoinType>,
+        trader: &Trader,
+    ){
+        assert!(!host.is_claimed.contains(trader.id()), EAlreadyClaimed);
     }
 
 }
