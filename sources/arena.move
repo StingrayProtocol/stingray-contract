@@ -86,6 +86,7 @@ module stingray::arena{
         is_matched: bool,
     }
 
+
     public struct NewArena<phantom CoinType> has copy, drop{
         id: ID,
         arena_type: u8,
@@ -106,6 +107,8 @@ module stingray::arena{
         start_time: u64,
         invest_duration: u64,
         end_time: u64,
+        limit_amount: u64,
+        expected_roi: u64,
     } 
     
     public struct Challenge has copy , drop{
@@ -293,6 +296,8 @@ module stingray::arena{
                 start_time: fund.start_time(),
                 invest_duration: fund.invest_duration(),
                 end_time: fund.invest_duration(),
+                limit_amount: fund.limit_amount(),
+                expected_roi: fund.expected_roi(),
             },
         ); 
     }

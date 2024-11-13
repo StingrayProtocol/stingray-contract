@@ -778,9 +778,9 @@ module stingray::fund{
         request: Take_1_Liquidity_For_2_Liquidity_Request<TakeCoinType, PutCoinType1, PutCoinType2>,
         liquidity1: Balance<PutCoinType1>,
         liquidity2: Balance<PutCoinType2>,
-        settle_request: &mut SettleRequest,
+        mut settle_request: SettleRequest,
         is_finished: bool,
-    ){
+    ): SettleRequest{
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -820,6 +820,7 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
+        settle_request
     }
 
 
@@ -828,9 +829,9 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
         request: Take_1_Liquidity_For_1_NonLiquidity_Request<TakeCoinType, PutAsset>,
         nonliquidity: PutAsset,
-        settle_request: &mut SettleRequest,
+        mut settle_request: SettleRequest,
         is_finished: bool,
-    ){
+    ): SettleRequest{
         
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -849,6 +850,7 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
+        settle_request
     }
     
 
@@ -857,9 +859,9 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
         request: Take_1_Liquidity_1_NonLiquidity_For_1_NonLiquidity_Request<TakeCoinType, TakeAsset, PutAsset>,
         nonliquidity: PutAsset,
-        settle_request: &mut SettleRequest,
+        mut settle_request: SettleRequest,
         is_finished: bool,
-    ){
+    ): SettleRequest{
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -879,6 +881,7 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
+        settle_request
     }
 
     public fun settle_1_nonLiquidity_for_1_liquidity<TakeAsset: store, PutCoinType, FundCoinType>(
@@ -886,9 +889,9 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
         request: Take_1_NonLiquidity_For_1_Liquidity_Request<TakeAsset, PutCoinType>,
         liquidity: Balance<PutCoinType>,
-        settle_request: &mut SettleRequest,
+        mut settle_request: SettleRequest,
         is_finished: bool,
-    ){
+    ): SettleRequest{
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -915,6 +918,7 @@ module stingray::fund{
 
         // update settle request
         settle_request.is_finished = is_finished;
+        settle_request
     }
 
     public fun settle_1_nonliquidity_for_2_liquidity<TakeAsset: store, PutCoinType1, PutCoinType2, FundCoinType>(
@@ -923,9 +927,9 @@ module stingray::fund{
         request: Take_1_NonLiquidity_For_2_Liquidity_Request<TakeAsset, PutCoinType1, PutCoinType2>,
         liquidity1: Balance<PutCoinType1>,
         liquidity2: Balance<PutCoinType2>,
-        settle_request: &mut SettleRequest,
+        mut settle_request: SettleRequest,
         is_finished: bool,
-    ){
+    ): SettleRequest{
 
         config::assert_if_version_not_matched(config, VERSION);
         
@@ -965,6 +969,7 @@ module stingray::fund{
         
         // update settle request
         settle_request.is_finished = is_finished;
+        settle_request
     }
 
     public fun create_settle_request< FundCoinType>(
@@ -1238,6 +1243,18 @@ module stingray::fund{
         fund: &Fund<CoinType>
     ):u64{
         fund.time.start_time
+    }
+
+    public fun limit_amount<CoinType>(
+        fund: &Fund<CoinType>
+    ):u64{
+        fund.limit_amount
+    }
+
+    public fun expected_roi<CoinType>(
+        fund: &Fund<CoinType>
+    ):u64{
+        fund.expected_roi
     }
 
     public (package) fun fund_id_of_1l_for_1l_req<TakeCoinType, PutCoinType>(
