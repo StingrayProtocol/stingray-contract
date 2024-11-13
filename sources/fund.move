@@ -45,6 +45,7 @@ module stingray::fund{
     const EOperationTimeNotArrived: u64 = 20;
     const EAlreadySettled: u64 = 21;
     const EInTradingPeriod: u64 = 22;
+    const ENotArrivedEndTime: u64 = 23;
 
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -687,11 +688,13 @@ module stingray::fund{
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
         shares: FundShare,
+        clock: &Clock,
         ctx: &mut TxContext,
     ): (Coin<FundCoinType>){
 
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_not_settle(fund);
+        assert_if_not_arrived_end_time(fund, clock);
         let owned_share_amount = shares.invest_amount();
         
         let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
@@ -745,10 +748,12 @@ module stingray::fund{
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
         trader: &Trader,
+        clock: &Clock,
         ctx: &mut TxContext,
     ): Coin<FundCoinType>{
         assert_if_trader_not_matched(fund, trader);
         assert_if_not_settle(fund);
+        assert_if_not_arrived_end_time(fund, clock);
         
         if (fund.after_amount >= fund.base ){
             if (fund.after_amount - fund.base >= config.min_rewards()){
@@ -1339,6 +1344,13 @@ module stingray::fund{
         clock: &Clock,
     ){
         assert!(fund.time.end_time < clock.timestamp_ms(), EInTradingPeriod );
+    }
+
+    fun assert_if_not_arrived_end_time<FundCoinType>(
+        fund: &Fund<FundCoinType>,
+        clock: &Clock,
+    ){
+        assert!(fund.time.end_time < clock.timestamp_ms(), ENotArrivedEndTime);
     }
 
     fun pay_platforem_fee<CoinType>(
