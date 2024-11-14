@@ -79,7 +79,7 @@ module stingray::trader{
 
         let values = vector[
             // name
-            string::utf8(b"Stingrey: {first_name} {last_name}"),
+            string::utf8(b"Stingray: {first_name} {last_name}"),
             // description
             string::utf8(b"{description}"),
             // image_url
@@ -99,7 +99,7 @@ module stingray::trader{
         let controller = HostController{
             id: object::new(ctx),
             balance: balance::zero<SUI>(),
-            register_fee: 10000000, // 0.01 SUI
+            register_fee: 1000000000, // 1 SUI
             mint_record: table::new<address, ID>(ctx),
         };
 
