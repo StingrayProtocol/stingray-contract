@@ -334,6 +334,8 @@ module stingray::arena{
                             trader: trader.id(),
                             result: result,
                         });
+                    is_replace = true;
+                    break
                 };
                 let recorded_win = arena.result.remove(current_idx);
                 if (recorded_win.result < value){
@@ -341,7 +343,6 @@ module stingray::arena{
                         trader: key,
                         result: value,
                     });
-                    is_replace = true;
                     key = recorded_win.trader;
                     value = recorded_win.result;
                 }else{
@@ -356,14 +357,33 @@ module stingray::arena{
                     trader: _,
                     result: _,
                 } = recorded_win;
+            };
+
+            if(is_replace){
+                event::emit(Challenge{
+                    fund_id: *fund.id().as_inner(),
+                    is_success: true,
+                });
+            }else if (key != trader.id()){
+                event::emit(Challenge{
+                    fund_id: *fund.id().as_inner(),
+                    is_success: true,
+                });
+            }else{
+                event::emit(Challenge{
+                    fund_id: *fund.id().as_inner(),
+                    is_success: false,
+                });
             }
-            
+
         };
 
         event::emit(Challenge{
-                fund_id: *fund.id().as_inner(),
-                is_success: is_replace,
+            fund_id: *fund.id().as_inner(),
+            is_success: false,
         });
+
+        
     }
 
     public fun claim_rank<CoinType>(

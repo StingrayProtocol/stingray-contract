@@ -688,13 +688,12 @@ module stingray::fund{
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
         shares: FundShare,
-        clock: &Clock,
         ctx: &mut TxContext,
     ): (Coin<FundCoinType>){
 
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_not_settle(fund);
-        assert_if_not_arrived_end_time(fund, clock);
+
         let owned_share_amount = shares.invest_amount();
         
         let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
