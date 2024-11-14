@@ -316,17 +316,6 @@ module stingray::trader{
         assert!(!controller.mint_record.contains(ctx.sender()), EAlreadyMinted);
     }
 
-    public entry fun take_sui_ns(
-        trader: &mut Trader,
-        ctx: &mut TxContext,
-    ){
-        let ns = dof::remove<Name, SuinsRegistration>(&mut trader.id, Name{});
-        let mut name = string::utf8(b"");
-        name.append( trader.first_name);
-        name.append(trader.last_name);
-        transfer::public_transfer(ns, ctx.sender())
-    } 
-
 
     #[test_only]
     public(package) fun test_init(
