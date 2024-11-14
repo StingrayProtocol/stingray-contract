@@ -45,7 +45,6 @@ module stingray::fund{
     const EOperationTimeNotArrived: u64 = 20;
     const EAlreadySettled: u64 = 21;
     const EInTradingPeriod: u64 = 22;
-    const ENotArrivedEndTime: u64 = 23;
 
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -167,7 +166,7 @@ module stingray::fund{
 
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_over_max_trader_fee(config, trader_fee);
-        assert_if_init_value_over_limoit(limit_amount, &coin);
+        assert_if_init_value_over_limit(limit_amount, &coin);
         assert_if_init_value_not_enough<FundCoinType>(config, limit_amount, &coin);
         assert_if_time_setting_wrong(start_time, invest_duration, end_time);
         //assert_if_over_current_time(start_time, clock);
@@ -746,12 +745,10 @@ module stingray::fund{
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
         trader: &Trader,
-        clock: &Clock,
         ctx: &mut TxContext,
     ): Coin<FundCoinType>{
         assert_if_trader_not_matched(fund, trader);
         assert_if_not_settle(fund);
-        assert_if_not_arrived_end_time(fund, clock);
         
         if (fund.after_amount >= fund.base ){
             if (fund.after_amount - fund.base >= config.min_rewards()){
@@ -1173,7 +1170,7 @@ module stingray::fund{
             put_amount2: _,
         } = request;
 
-         // check one of these asset
+        // check one of these asset
         assert_if_put_amount_is_zero(put_amount1);
         // assert_if_put_amount_is_zero(put_amount2);
        
@@ -1279,7 +1276,7 @@ module stingray::fund{
         assert!(fund.is_settle, ENotSettle);
     }
 
-    fun assert_if_init_value_over_limoit<CoinType>(
+    fun assert_if_init_value_over_limit<CoinType>(
         limit_amount: u64, 
         coin: &Coin<CoinType>
     ){
@@ -1342,13 +1339,6 @@ module stingray::fund{
         clock: &Clock,
     ){
         assert!(fund.time.end_time < clock.timestamp_ms(), EInTradingPeriod );
-    }
-
-    fun assert_if_not_arrived_end_time<FundCoinType>(
-        fund: &Fund<FundCoinType>,
-        clock: &Clock,
-    ){
-        assert!(fund.time.end_time < clock.timestamp_ms(), ENotArrivedEndTime);
     }
 
     fun pay_platforem_fee<CoinType>(

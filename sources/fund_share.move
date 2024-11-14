@@ -45,12 +45,11 @@ module stingray::fund_share{
     const VERSION: u64 = 1;
 
     const EFundIdNotMatched: u64 = 0;
-    const EFundEndTimeNotMatched: u64 = 1;
-    const EOutOfAmount:u64 = 2;
-    const EFundShareFundIdNotMatched: u64 = 3;
-    const EFundShareTraderNotMatched: u64 = 4;
-    const EFundShareFundTypeNotMatched: u64 = 5;
-    const EFundShareEndTimeNotMatched: u64 = 6;
+    const EOutOfAmount:u64 = 1;
+    const EFundShareFundIdNotMatched: u64 = 2;
+    const EFundShareTraderNotMatched: u64 = 3;
+    const EFundShareFundTypeNotMatched: u64 = 4;
+    const EFundShareEndTimeNotMatched: u64 = 5;
 
     public(package) fun create_mint_request<FundCoinType>(
         config: &GlobalConfig,
@@ -160,7 +159,7 @@ module stingray::fund_share{
         share
     }
 
-    public fun burn<FundCoinType>(
+    public(package) fun burn<FundCoinType>(
         config: &GlobalConfig,
         request: BurnRequest<FundCoinType>,
         share: FundShare,
@@ -169,11 +168,10 @@ module stingray::fund_share{
 
         let BurnRequest{
             fund_id: request_fund_id,
-            end_time: request_end_time,
+            end_time: _,
         } = request;
 
         assert_if_fund_id_not_matched(&share, request_fund_id);
-        assert_if_fund_end_time_not_matched(&share, request_end_time);
 
         let FundShare{
             id,
@@ -199,13 +197,6 @@ module stingray::fund_share{
         request_fund_id: ID,
     ){
         assert!(share.fund_id == request_fund_id, EFundIdNotMatched);
-    }
-
-    fun assert_if_fund_end_time_not_matched(
-        share: &FundShare,
-        request_end_time: u64,
-    ){
-        assert!(share.end_time == request_end_time, EFundEndTimeNotMatched);
     }
 
     fun assert_if_amount_not_enough(
