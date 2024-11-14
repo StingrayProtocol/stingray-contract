@@ -738,7 +738,6 @@ module stingray::fund{
                         amount: final_amount,
                     }
                 );
-
                 coin::from_balance<FundCoinType>(total_asset.split(final_amount), ctx)
             }
         }
@@ -1049,8 +1048,6 @@ module stingray::fund{
         (take_balance, take_request)
     }
 
-
-
     fun take_1_nonliquidity_for_2_liquidity<TakeAsset: store, PutCoinType1, PutCoinType2, FundCoinType>(
         fund: &mut Fund<FundCoinType>,
         clock: &Clock,
@@ -1173,13 +1170,15 @@ module stingray::fund{
             fund: _,
             take_amount: _,
             put_amount1,
-            put_amount2,
+            put_amount2: _,
         } = request;
 
+         // check one of these asset
         assert_if_put_amount_is_zero(put_amount1);
-        assert_if_put_amount_is_zero(put_amount2);
-        // check one of these asset
-        assert_if_put_liquidity_not_equal_to_put_amount(put_amount1, liquidity2.value());      
+        // assert_if_put_amount_is_zero(put_amount2);
+       
+        assert_if_put_liquidity_not_equal_to_put_amount(put_amount1, liquidity1.value()); 
+        //assert_if_put_liquidity_not_equal_to_put_amount(put_amount2, liquidity2.value());      
 
         let asset_type1 = type_name::get<Balance<PutCoinType1>>();
         let asset_type2 = type_name::get<Balance<PutCoinType2>>();
