@@ -98,7 +98,7 @@ module stingray::fund_share{
             fund_id: share.fund_id,
             trader: share.trader,
             fund_type: share.fund_type,
-            invest_amount: share.invest_amount,
+            invest_amount: amount,
             end_time: share.end_time,
         }
     }

@@ -299,12 +299,16 @@ module stingray::fund{
         ctx: &mut TxContext,
     ){  
         config::assert_if_version_not_matched(config, VERSION);
+        
         assert_if_over_invest_duration(fund, clock);
         assert_if_not_arrived_invest_duration(fund, clock);
         
         let mut total_share = shares.pop_back();
-        let loop_times = shares.length() - 1;
-        fund.share_amount = fund.share_amount - total_share.invest_amount();
+        let mut loop_times = 0;
+        if (shares.length() != 0 ){
+            loop_times = shares.length() - 1;
+        };
+        fund.share_amount = fund.share_amount - amount;
         
         let mut current_idx = 0;
         while(current_idx < loop_times){
@@ -312,6 +316,7 @@ module stingray::fund{
             total_share.join(share);
             current_idx = current_idx + 1;
         };
+
         let deinvest_share = total_share.split(amount, ctx);  
         
         if (total_share.invest_amount() == 0){
