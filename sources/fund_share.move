@@ -23,6 +23,18 @@ module stingray::fund_share{
         investor: address,
     }
 
+    public struct Splited has copy, drop{
+        new_share_id: ID,
+        invest_amount: u64,
+    }
+
+    public struct Merged has copy, drop{
+        base_share_id: ID,
+        base_invest_amount: u64,
+        burn_share_id: ID,
+        burn_invest_amount: u64,        
+    }
+
     // hot potato
     public struct MintRequest<phantom FundCoinType>{
         fund_id: ID,
@@ -93,14 +105,22 @@ module stingray::fund_share{
     ): FundShare{
         assert_if_amount_not_enough(share, amount);
         share.invest_amount = share.invest_amount - amount;
-        FundShare{
+        let new_share = FundShare{
             id: object::new(ctx),
             fund_id: share.fund_id,
             trader: share.trader,
             fund_type: share.fund_type,
             invest_amount: amount,
             end_time: share.end_time,
-        }
+        };
+
+        event::emit(Splited{
+            new_share_id: *new_share.id.as_inner(),
+            invest_amount: amount,
+        });
+
+        new_share
+
     }
 
     public fun join(
@@ -119,6 +139,13 @@ module stingray::fund_share{
         } = to_be_join;
         
         share.invest_amount = share.invest_amount + invest_amount;
+
+        event::emit(Merged{
+            base_share_id: *share.id.as_inner(),
+            base_invest_amount: share.invest_amount,
+            burn_share_id: *id.as_inner(),
+            burn_invest_amount: invest_amount,
+        });
 
         object::delete(id);
 
