@@ -1252,7 +1252,7 @@ module stingray::fund{
         end_time: u64,
     ){
         assert!(end_time > start_time, EEndTimeNotBiggerThanStartTime);
-        assert!(invest_duration >= 3600000, ELessThanMinDuration);
+        //assert!(invest_duration >= 3600000, ELessThanMinDuration);
     }
 
     fun assert_if_trader_not_matched<FundCoinType>(
