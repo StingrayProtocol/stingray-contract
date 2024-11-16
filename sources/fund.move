@@ -45,6 +45,7 @@ module stingray::fund{
     const EOperationTimeNotArrived: u64 = 20;
     const EAlreadySettled: u64 = 21;
     const EInTradingPeriod: u64 = 22;
+    const EEmptyArray: u64 = 23;
 
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -302,12 +303,11 @@ module stingray::fund{
         
         assert_if_over_invest_duration(fund, clock);
         assert_if_not_arrived_invest_duration(fund, clock);
+        assert_if_shares_empty(&shares);
         
         let mut total_share = shares.pop_back();
-        let mut loop_times = 0;
-        if (shares.length() != 0 ){
-            loop_times = shares.length() - 1;
-        };
+        let mut loop_times = shares.length();
+
         fund.share_amount = fund.share_amount - amount;
         
         let mut current_idx = 0;
@@ -1344,6 +1344,12 @@ module stingray::fund{
         clock: &Clock,
     ){
         assert!(fund.time.end_time < clock.timestamp_ms(), EInTradingPeriod );
+    }
+
+    fun assert_if_shares_empty(
+        shares: &vector<FundShare>,
+    ){
+        assert!(shares.length() != 0, EEmptyArray);
     }
 
     fun pay_platforem_fee<CoinType>(
