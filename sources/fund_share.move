@@ -218,6 +218,12 @@ module stingray::fund_share{
         share.invest_amount
     }
 
+    public fun id(
+        share: &FundShare,
+    ): ID{
+        *share.id.as_inner()
+    }
+
 
     fun assert_if_fund_id_not_matched(
         share: &FundShare,

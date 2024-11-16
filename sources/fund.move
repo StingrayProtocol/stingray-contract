@@ -129,6 +129,13 @@ module stingray::fund{
         expected_roi: u64,
     }
 
+
+    // TODO: emit this event
+    public struct Deinvested has copy, drop{
+        remain_share: Option<ID>,
+        withdraw_invest_amount: u64,
+    }
+
     public struct Settled has copy, drop{
         fund: ID,
         is_finished: bool,
@@ -304,6 +311,8 @@ module stingray::fund{
         assert_if_over_invest_duration(fund, clock);
         assert_if_not_arrived_invest_duration(fund, clock);
         assert_if_shares_empty(&shares);
+
+        fund.base = fund.base - amount;
         
         let mut total_share = shares.pop_back();
         let mut loop_times = shares.length();
@@ -322,7 +331,16 @@ module stingray::fund{
         if (total_share.invest_amount() == 0){
             let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
             fund_share::burn<FundCoinType>(config, burn_request, total_share);
+            
+            event::emit (Deinvested{
+                remain_share: option::none(),
+                withdraw_invest_amount: amount,
+            });
         }else{
+            event::emit (Deinvested{
+                remain_share: option::some<ID>(total_share.id()),
+                withdraw_invest_amount: amount,
+            });
             transfer::public_transfer(total_share, ctx.sender());
         };
 
