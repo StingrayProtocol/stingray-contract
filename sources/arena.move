@@ -294,7 +294,7 @@ module stingray::arena{
                 fund_img: fund.fund_img(),
                 trader: fund.trader(),
                 trader_fee: fund.trader_fee(),
-                start_time: arena.start_time,
+                start_time: arena.start_time+ arena.attend_duration,
                 invest_duration: arena.invest_duration,
                 end_time: arena.end_time,
                 limit_amount: fund.limit_amount(),
