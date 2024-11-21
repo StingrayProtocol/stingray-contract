@@ -1,17 +1,27 @@
 module stingray::cetus{
-    use sui::clock::Clock;
-    use sui::balance::{Self, Balance};
-    use sui::event::{Self};
+
+    use sui::{
+        clock::Clock,
+        balance::{Self, Balance},
+        coin::{Self, Coin},
+        event::{Self},
+    };
+    
     use std::{
         type_name::{Self, TypeName},
         string::{Self, String},
     };
 
-    use cetus_clmm::config::GlobalConfig;
-    use cetus_clmm::pool::{Self, Pool};
+    use cetus_clmm::{
+        config::GlobalConfig,
+        pool::{Self, Pool},
+        position::{Position},
+    };
 
     use stingray::{
-        fund:: { Take_1_Liquidity_For_1_Liquidity_Request,},
+        fund:: { 
+            Take_1_Liquidity_For_1_Liquidity_Request, 
+            Take_2_Liquidity_For_1_NonLiquidity_Request},
     };
 
     public struct Swap has copy, drop{
@@ -104,6 +114,46 @@ module stingray::cetus{
             } 
         );
     }
+
+    public fun open_position_and_add_liquidity<TakeCoinType1, TakeCoinType2, PutAsset, X, Y>(
+        request: &mut Take_2_Liquidity_For_1_NonLiquidity_Request<TakeCoinType1, TakeCoinType2, PutAsset>,
+        input_x: Balance<X>,
+        input_y: Balance<Y>,
+        config: &GlobalConfig,
+        pool: &mut Pool<X, Y>,
+        tick_lower: u32,
+        tick_upper: u32,
+        delta_liquidity: u128,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ): Position{
+        let mut position_nft = pool::open_position(
+            config,
+            pool,
+            tick_lower,
+            tick_upper,
+            ctx,
+        );
+        
+        let receipt = pool::add_liquidity<X, Y>(
+            config,
+            pool,
+            &mut position_nft,
+            delta_liquidity,
+            clock
+        );
+        pool::repay_add_liquidity(config, pool, input_x, input_y, receipt);
+
+        request.supported_defi_confirm_2l_for_1nl(1);
+
+        position_nft
+    }
+
+    // public fun close_position_and_remove_liquidity<X, Y>(
+        
+    // ){
+
+    // }
 
     public fun take_zero_balance<CoinType>(): Balance<CoinType>{
         balance::zero<CoinType>()
