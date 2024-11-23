@@ -3,7 +3,6 @@ module stingray::cetus{
     use sui::{
         clock::Clock,
         balance::{Self, Balance},
-        coin::{Self, Coin},
         event::{Self},
     };
     
@@ -15,13 +14,14 @@ module stingray::cetus{
     use cetus_clmm::{
         config::GlobalConfig,
         pool::{Self, Pool},
-        position::{Position},
+        position::{Self, Position},
     };
 
     use stingray::{
         fund:: { 
             Take_1_Liquidity_For_1_Liquidity_Request, 
-            Take_2_Liquidity_For_1_NonLiquidity_Request},
+            Take_2_Liquidity_For_1_NonLiquidity_Request,
+            Take_1_NonLiquidity_For_2_Liquidity_Request},
     };
 
     public struct Swap has copy, drop{
@@ -149,11 +149,42 @@ module stingray::cetus{
         position_nft
     }
 
-    // public fun close_position_and_remove_liquidity<X, Y>(
-        
-    // ){
+    public fun close_position_and_remove_liquidity<TakeAsset: store , PutCoinType1, PutCoinType2, X, Y>(
+        request: &mut Take_1_NonLiquidity_For_2_Liquidity_Request<TakeAsset, PutCoinType1, PutCoinType2>,
+        config: &GlobalConfig,
+        pool: &mut Pool<X, Y>,
+        mut position_nft: Position,
+        delta_liquidity: u128,
+        clock: &Clock,
+    ): (Balance<X>, Balance<Y>){
 
-    // }
+        let (mut balance_a, mut balance_b) = pool::remove_liquidity<X, Y>(
+            config,
+            pool,
+            &mut position_nft,
+            delta_liquidity,
+            clock
+        );
+
+        let (fee_a, fee_b) = pool::collect_fee(
+            config,
+            pool,
+            &mut position_nft,
+            false
+        );
+
+        // you can implentment these methods by yourself methods.
+        balance_a.join(fee_a);
+        balance_b.join(fee_b);
+
+        pool::close_position<X, Y>(config, pool, position_nft);
+
+        request.supported_defi_confirm_1nl_for_2l<TakeAsset, PutCoinType1, PutCoinType2>(balance_a.value(), balance_b.value());
+
+       ( balance_a, balance_b)
+
+
+    }
 
     public fun take_zero_balance<CoinType>(): Balance<CoinType>{
         balance::zero<CoinType>()
@@ -163,6 +194,12 @@ module stingray::cetus{
         balance: Balance<CoinType>,
     ){
         balance.destroy_zero();
+    }
+
+    public fun get_position_liquidity(
+        position_nft: &Position,
+    ): u128{
+        position_nft.liquidity()
     }
     
 }
