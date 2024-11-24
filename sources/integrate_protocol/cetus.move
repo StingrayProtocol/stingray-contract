@@ -14,7 +14,7 @@ module stingray::cetus{
     use cetus_clmm::{
         config::GlobalConfig,
         pool::{Self, Pool},
-        position::{Self, Position},
+        position::{Position},
     };
 
     use stingray::{
@@ -169,7 +169,7 @@ module stingray::cetus{
         let (fee_a, fee_b) = pool::collect_fee(
             config,
             pool,
-            &mut position_nft,
+            &position_nft,
             false
         );
 

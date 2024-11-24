@@ -30,22 +30,21 @@ module stingray::fund{
     const EPutAmountNotMatchedPutBalance:u64 = 5;
     const ENonLiquidityInFund: u64 = 6;
     const EEndTimeNotBiggerThanStartTime:u64 = 7;
-    const ELessThanMinDuration: u64 = 8;
-    const ETraderNotMatched: u64 = 9;
-    const ESettleNotFinished: u64 = 10;
-    const EFundHasNonBaseAsset: u64 = 11;
-    const EBaseTypeNotMatched: u64 = 12;
-    const ENotSettle: u64 = 13;
-    const EOverInvestTime: u64 = 14;
-    const ENotArrivedInvestTime: u64 = 15;
-    const EAssetNotInAssetArray: u64 = 16;
-    const ETraderInitBalanceNeedToOverThreshold: u64 = 17;
-    const EInitValueOverLimit: u64 = 18;
-    const EOverFundLimitAmount: u64 = 19;
-    const EOperationTimeNotArrived: u64 = 20;
-    const EAlreadySettled: u64 = 21;
-    const EInTradingPeriod: u64 = 22;
-    const EEmptyArray: u64 = 23;
+    const ETraderNotMatched: u64 = 8;
+    const ESettleNotFinished: u64 = 9;
+    const EFundHasNonBaseAsset: u64 = 10;
+    const EBaseTypeNotMatched: u64 = 11;
+    const ENotSettle: u64 = 12;
+    const EOverInvestTime: u64 = 13;
+    const ENotArrivedInvestTime: u64 = 14;
+    const EAssetNotInAssetArray: u64 = 15;
+    const ETraderInitBalanceNeedToOverThreshold: u64 = 16;
+    const EInitValueOverLimit: u64 = 17;
+    const EOverFundLimitAmount: u64 = 18;
+    const EOperationTimeNotArrived: u64 = 19;
+    const EAlreadySettled: u64 = 20;
+    const EInTradingPeriod: u64 = 21;
+    const EEmptyArray: u64 = 22;
 
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -185,7 +184,7 @@ module stingray::fund{
         assert_if_over_max_trader_fee(config, trader_fee);
         assert_if_init_value_over_limit(limit_amount, &coin);
         assert_if_init_value_not_enough<FundCoinType>(config, limit_amount, &coin);
-        assert_if_time_setting_wrong(start_time, invest_duration, end_time);
+        assert_if_time_setting_wrong(start_time, end_time);
         //assert_if_over_current_time(start_time, clock);
 
         let mut type_arr = vector::empty<TypeName>();
@@ -323,7 +322,7 @@ module stingray::fund{
         fund.base = fund.base - amount;
         
         let mut total_share = shares.pop_back();
-        let mut loop_times = shares.length();
+        let loop_times = shares.length();
 
         fund.share_amount = fund.share_amount - amount;
         
@@ -1005,7 +1004,7 @@ module stingray::fund{
             put_amount1: 0,
             put_amount2: 0,
         };
-        
+
         if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let idx = assert_if_not_inclued_in_asset_array(fund, take_asset_type);
@@ -1291,7 +1290,6 @@ module stingray::fund{
 
     fun assert_if_time_setting_wrong(
         start_time: u64,
-        invest_duration: u64,
         end_time: u64,
     ){
         assert!(end_time > start_time, EEndTimeNotBiggerThanStartTime);
