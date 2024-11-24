@@ -111,7 +111,7 @@ module stingray::trader{
     public entry fun mint(
         config: &mut GlobalConfig,
         controller: &mut HostController,
-        sui_ns: &SuinsRegistration,
+        //sui_ns: &SuinsRegistration,
         pfp_img: String, // blob id 
         card_img: String, // blob id 
         description: String,
@@ -126,8 +126,12 @@ module stingray::trader{
         //assert_if_ns_expired_by_ns(&sui_ns, clock);
         assert_if_balance_not_matched(controller, &balance );
 
-        let first_name = *sui_ns.domain().sld();
-        let last_name =  *sui_ns.domain().tld();
+        // let first_name = *sui_ns.domain().sld();
+        // let last_name =  *sui_ns.domain().tld();
+
+        let first_name = string::utf8(b"");
+        let last_name = string::utf8(b"");
+        
         
         let mut name = string::utf8(b"");
         name.append(first_name);
