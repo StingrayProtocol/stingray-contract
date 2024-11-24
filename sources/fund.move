@@ -558,87 +558,17 @@ module stingray::fund{
         
         put_1_nonliquidity_for_2_liquidity<TakeAsset, PutCoinType1, PutCoinType2, FundCoinType>(fund, request, liquidity1, liquidity2 );
     }
-    // settle 
-    public fun settle_1_liquidity_for_1_liquidity< TakeCoinType, PutCoinType, FundCoinType>(
-        config: &GlobalConfig,
+
+    public fun check_and_clean<FundCoinType, CoinType>(
         fund: &mut Fund<FundCoinType>,
-        take_request: Take_1_Liquidity_For_1_Liquidity_Request<TakeCoinType, PutCoinType>,
-        liquidity: Balance<PutCoinType>,
-        mut settle_request: SettleRequest,
-        is_finished: bool,
-    ): SettleRequest{
+    ){
+        let asset_type = type_name::get<Balance<CoinType>>();
+        let idx = assert_if_not_inclued_in_asset_array<FundCoinType>(fund, asset_type);
+        let asset_amount = fund.asset.assets.borrow<TypeName, Balance<CoinType>>(asset_type).value();
         
-        config::assert_if_version_not_matched(config, VERSION);
-        
-        put_1_liquidity_for_1_liquidity< TakeCoinType, PutCoinType, FundCoinType>(fund, take_request, liquidity);
-
-        clear_if_less_than_threshold<PutCoinType, FundCoinType>(fund);
-        // update settle request
-        settle_request.is_finished = is_finished;
-        settle_request
-    }
-
-    public fun settle_1_liquidity_for_2_liquidity<TakeCoinType, PutCoinType1, PutCoinType2, FundCoinType>(
-        config: &GlobalConfig,
-        fund: &mut Fund<FundCoinType>,
-        take_request: Take_1_Liquidity_For_2_Liquidity_Request<TakeCoinType, PutCoinType1, PutCoinType2>,
-        liquidity1: Balance<PutCoinType1>,
-        liquidity2: Balance<PutCoinType2>,
-        mut settle_request: SettleRequest,
-        is_finished: bool,
-    ): SettleRequest{
-
-        config::assert_if_version_not_matched(config, VERSION);
-        
-        put_1_liquidity_for_2_liquidity<TakeCoinType, PutCoinType1, PutCoinType2, FundCoinType>(fund, take_request, liquidity1, liquidity2);
-
-        clear_if_less_than_threshold<PutCoinType1, FundCoinType>(fund);
-        clear_if_less_than_threshold<PutCoinType2, FundCoinType>(fund);
-
-        // update settle request
-        settle_request.is_finished = is_finished;
-        settle_request
-    }
-
-
-    public fun settle_1_liquidity_for_1_nonliquidity<TakeCoinType, PutAsset: store, FundCoinType>(
-        config: &GlobalConfig,
-        fund: &mut Fund<FundCoinType>,
-        take_request: Take_1_Liquidity_For_1_NonLiquidity_Request<TakeCoinType, PutAsset>,
-        nonliquidity: PutAsset,
-        mut settle_request: SettleRequest,
-        is_finished: bool,
-    ): SettleRequest{
-        
-        config::assert_if_version_not_matched(config, VERSION);
-        
-        put_1_liquidity_for_1_nonliquidity<TakeCoinType, PutAsset, FundCoinType>(fund, take_request, nonliquidity);
-
-        // update settle request
-        settle_request.is_finished = is_finished;
-        settle_request
-    }
-
-    public fun settle_1_nonliquidity_for_2_liquidity<TakeAsset: store, PutCoinType1, PutCoinType2, FundCoinType>(
-        config: &GlobalConfig,
-        fund: &mut Fund<FundCoinType>,
-        take_request: Take_1_NonLiquidity_For_2_Liquidity_Request<TakeAsset, PutCoinType1, PutCoinType2>,
-        liquidity1: Balance<PutCoinType1>,
-        liquidity2: Balance<PutCoinType2>,
-        mut settle_request: SettleRequest,
-        is_finished: bool,
-    ): SettleRequest{
-
-        config::assert_if_version_not_matched(config, VERSION);
-        
-        put_1_nonliquidity_for_2_liquidity<TakeAsset, PutCoinType1, PutCoinType2, FundCoinType>(fund, take_request, liquidity1, liquidity2);
-
-        clear_if_less_than_threshold<PutCoinType1, FundCoinType>(fund);
-        clear_if_less_than_threshold<PutCoinType2, FundCoinType>(fund);
-        
-        // update settle request
-        settle_request.is_finished = is_finished;
-        settle_request
+        if (asset_amount <= MIN_AMOUNT_THRESHOLD){
+            fund.asset.asset_types.swap_remove(idx);
+        };
     }
 
     public fun create_settle_request< FundCoinType>(
@@ -1049,7 +979,7 @@ module stingray::fund{
         if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let idx = assert_if_not_inclued_in_asset_array(fund, take_asset_type);
-            fund.asset.asset_types.remove(idx);
+            fund.asset.asset_types.swap_remove(idx);
         };
 
         (take_balance, take_request)
@@ -1075,7 +1005,7 @@ module stingray::fund{
             put_amount1: 0,
             put_amount2: 0,
         };
-
+        
         if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let idx = assert_if_not_inclued_in_asset_array(fund, take_asset_type);
@@ -1109,7 +1039,7 @@ module stingray::fund{
         if (amount == total_value){
             let take_asset_type = type_name::get<Balance<TakeCoinType>>();
             let idx = assert_if_not_inclued_in_asset_array(fund, take_asset_type);
-            fund.asset.asset_types.remove(idx);
+            fund.asset.asset_types.swap_remove(idx);
         };
 
         (take_balance, take_request)
@@ -1147,13 +1077,13 @@ module stingray::fund{
         if (amount1 == total_value1){
             let take_asset_type1 = type_name::get<Balance<TakeCoinType1>>();
             let idx = assert_if_not_inclued_in_asset_array(fund, take_asset_type1);
-            fund.asset.asset_types.remove(idx);
+            fund.asset.asset_types.swap_remove(idx);
         };
 
         if (amount2 == total_value2){
             let take_asset_type2 = type_name::get<Balance<TakeCoinType2>>();
             let (_, idx) = fund.asset.asset_types.index_of(&take_asset_type2);
-            fund.asset.asset_types.remove(idx);
+            fund.asset.asset_types.swap_remove(idx);
         };
 
         (take_balance1, take_balance2, take_request)
@@ -1172,7 +1102,7 @@ module stingray::fund{
         let take_asset = fund.asset.assets.remove<TypeName, TakeAsset>(asset_type);
 
         let idx = assert_if_not_inclued_in_asset_array(fund, asset_type);
-        fund.asset.asset_types.remove(idx);
+        fund.asset.asset_types.swap_remove(idx);
         
         let take_request = Take_1_NonLiquidity_For_2_Liquidity_Request<TakeAsset,PutCoinType1, PutCoinType2>{
             fund: *fund.id().as_inner(),
@@ -1414,8 +1344,8 @@ module stingray::fund{
         assert!(fund.time.start_time <= clock.timestamp_ms(), ENotArrivedInvestTime);
     }
 
-    fun assert_if_not_inclued_in_asset_array<CoinType>(
-        fund: &Fund<CoinType>,
+    fun assert_if_not_inclued_in_asset_array<FundCoinType>(
+        fund: &Fund<FundCoinType>,
         asset_type: TypeName,
     ):u64{
         let (is_contain, idx) = fund.asset.asset_types.index_of(&asset_type);
@@ -1483,18 +1413,5 @@ module stingray::fund{
     ){
         let output_coin = fund.asset.assets.remove<TypeName ,Balance<CoinType>>(type_name::get<Balance<CoinType>>());
         transfer::public_transfer(coin::from_balance(output_coin, ctx), ctx.sender());
-    }
-
-    fun clear_if_less_than_threshold<PutCoinType, FundCoinType>(
-        fund: &mut Fund<FundCoinType>,
-    ){
-        let asset_type = type_name::get<Balance<PutCoinType>>();
-        let amount = fund.asset.assets.borrow<TypeName, Balance<PutCoinType>>(asset_type).value();
-
-        let idx = assert_if_not_inclued_in_asset_array<FundCoinType>(fund, asset_type);
-        
-        if (amount <= MIN_AMOUNT_THRESHOLD){
-            fund.asset.asset_types.remove(idx);
-        };
     }
 }
