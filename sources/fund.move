@@ -562,12 +562,16 @@ module stingray::fund{
         fund: &mut Fund<FundCoinType>,
     ){
         let asset_type = type_name::get<Balance<CoinType>>();
-        let idx = assert_if_not_inclued_in_asset_array<FundCoinType>(fund, asset_type);
-        let asset_amount = fund.asset.assets.borrow<TypeName, Balance<CoinType>>(asset_type).value();
+
+        let (is_contain, idx) = fund.asset.asset_types.index_of(&asset_type);
+        if (is_contain){
+            let asset_amount = fund.asset.assets.borrow<TypeName, Balance<CoinType>>(asset_type).value();
         
-        if (asset_amount <= MIN_AMOUNT_THRESHOLD){
-            fund.asset.asset_types.swap_remove(idx);
+            if (asset_amount <= MIN_AMOUNT_THRESHOLD){
+                fund.asset.asset_types.swap_remove(idx);
+            };
         };
+        
     }
 
     public fun create_settle_request< FundCoinType>(
@@ -628,10 +632,10 @@ module stingray::fund{
         // calculate rewards
         let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value();
         let fund_base = fund.base;
-        let expected_base = fund_base * fund.expected_roi /config.base_percentage();
+        let expected_base = fund_base * (config.base_percentage() + fund.expected_roi) /config.base_percentage();
         fund.after_amount = total_base;
-        if (total_base > fund_base){
-            if (fund.base < config.min_rewards()){
+        if (total_base > fund_base){ // positive rewards
+            if ((total_base - fund_base) < config.min_rewards()){ // less than min reward threshold
                 pay_platforem_fee(config, fund, (total_base - fund_base), ctx);
                 
                 if(total_base >= expected_base){
@@ -651,26 +655,44 @@ module stingray::fund{
                         }
                     );
                 };
+
                 coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
             }else{
                 let total = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
                 let reward_amount = total_base - fund_base;
                 let platform_fee = reward_amount * config.platform_fee() / config.base_percentage();
-                let to_settler_value = (reward_amount - platform_fee) *  config.settle_percentage() / config.base_percentage();
+                let to_settler_value = reward_amount *  config.settle_percentage() / config.base_percentage();
                 let to_settle_balance = total.split(to_settler_value);
                 pay_platforem_fee(config, fund, platform_fee, ctx);
 
-                event::emit(
-                    SettleResult{
-                        fund: fund_id,
-                        trader: fund.trader(),
-                        is_matched_roi: false,
-                    }
-                );
+                if(total_base >= expected_base){
+                    event::emit(
+                        SettleResult{
+                            fund: fund_id,
+                            trader: fund.trader(),
+                            is_matched_roi: true,
+                        }
+                    );
+                }else{
+                    event::emit(
+                        SettleResult{
+                            fund: fund_id,
+                            trader: fund.trader(),
+                            is_matched_roi: false,
+                        }
+                    );
+                };
 
                 coin::from_balance<FundCoinType>(to_settle_balance, ctx)
             }
         }else{
+            event::emit(
+            SettleResult{
+                fund: fund_id,
+                trader: fund.trader(),
+                is_matched_roi: false,
+                }
+            );
             coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
         }
 
@@ -1135,7 +1157,13 @@ module stingray::fund{
             fund_asset.join(liquidity);
         }else{
             fund.asset.asset_types.push_back(asset_type);
-            fund.asset.assets.add(asset_type, liquidity);
+            if (fund.asset.assets.contains(asset_type)){
+                let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<PutCoinType>>(asset_type);
+                fund_asset.join(liquidity);
+            }else{
+                fund.asset.assets.add(asset_type, liquidity);
+            };
+            
         };
 
     }
@@ -1168,7 +1196,13 @@ module stingray::fund{
             fund_asset.join(liquidity1);
         }else{
             fund.asset.asset_types.push_back(asset_type1);
-            fund.asset.assets.add(asset_type1, liquidity1);
+            if (fund.asset.assets.contains(asset_type1)){
+                let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<PutCoinType1>>(asset_type1);
+                fund_asset.join(liquidity1);
+            }else{
+                fund.asset.assets.add(asset_type1, liquidity1);
+            };
+
         };
      
         let (is_contain2, _) = fund.asset.asset_types.index_of(&asset_type2);
@@ -1177,7 +1211,12 @@ module stingray::fund{
             fund_asset.join(liquidity2);
         }else{
             fund.asset.asset_types.push_back(asset_type2);
-            fund.asset.assets.add(asset_type2, liquidity2);
+            if (fund.asset.assets.contains(asset_type2)){
+                let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<PutCoinType2>>(asset_type2);
+                fund_asset.join(liquidity2);
+            }else{
+                fund.asset.assets.add(asset_type2, liquidity2);
+            };
         };
     }
 
@@ -1231,7 +1270,12 @@ module stingray::fund{
             fund_asset.join(liquidity1);
         }else{
             fund.asset.asset_types.push_back(asset_type1);
-            fund.asset.assets.add(asset_type1, liquidity1);
+            if (fund.asset.assets.contains(asset_type1)){
+                let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<PutCoinType1>>(asset_type1);
+                fund_asset.join(liquidity1);
+            }else{
+                fund.asset.assets.add(asset_type1, liquidity1);
+            };
         };
 
         let (is_contain2, _) = fund.asset.asset_types.index_of(&asset_type2);
@@ -1240,7 +1284,12 @@ module stingray::fund{
             fund_asset.join(liquidity2);
         }else{
             fund.asset.asset_types.push_back(asset_type2);
-            fund.asset.assets.add(asset_type2, liquidity2);
+            if (fund.asset.assets.contains(asset_type2)){
+                let fund_asset = fund.asset.assets.borrow_mut<TypeName, Balance<PutCoinType2>>(asset_type2);
+                fund_asset.join(liquidity2);
+            }else{
+                fund.asset.assets.add(asset_type2, liquidity2);
+            };
         };
 
     }

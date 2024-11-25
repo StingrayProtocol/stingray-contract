@@ -32,7 +32,7 @@ module stingray::config{
             min_rewards: 1000000,
             trader_init_percentage: 100,
             min_base: 10000,
-            settle_percentage: 100,
+            settle_percentage: 250,
             base_percentage: 10000,
             platform_fee: 200,
             platform: @0x39dfa26ecaf49a466cfe33b2e98de9b46425eec170e59eb40d3f69d061a67778,
