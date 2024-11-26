@@ -253,7 +253,7 @@ module stingray::fund{
             fund.trader, 
             fund_type, 
             init_amount, 
-            fund.time.end_time);
+            );
 
         (fund, share_request)
     }
@@ -300,7 +300,7 @@ module stingray::fund{
             fund.trader, 
             fund_type, 
             invest_amount, 
-            fund.time.end_time)
+            )
     }
 
     // cancel_invest
@@ -336,7 +336,7 @@ module stingray::fund{
         let deinvest_share = total_share.split(amount, ctx);  
         
         if (total_share.invest_amount() == 0){
-            let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
+            let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner());
             fund_share::burn<FundCoinType>(config, burn_request, total_share);
             
             event::emit (Deinvested{
@@ -360,7 +360,7 @@ module stingray::fund{
         
         transfer::public_transfer(coin::from_balance(to_deinvestor, ctx), ctx.sender());
 
-        let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
+        let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner());
         fund_share::burn<FundCoinType>(config, burn_request, deinvest_share);
 
         vector::destroy_empty(shares);
@@ -710,7 +710,7 @@ module stingray::fund{
 
         let owned_share_amount = shares.invest_amount();
         
-        let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner(), fund.time.end_time);
+        let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner());
         fund_share::burn<FundCoinType>(config, burn_request, shares);
         
         if (fund.after_amount < fund.base ){
