@@ -143,7 +143,6 @@ module stingray::fund_share{
         });
 
         object::delete(id);
-
     }
 
     public fun mint<FundCoinType>(
@@ -222,6 +221,12 @@ module stingray::fund_share{
         share: &FundShare,
     ): ID{
         *share.id.as_inner()
+    }
+
+    public fun fund_id(
+        share: &FundShare,
+    ): ID{
+        share.fund_id
     }
 
 

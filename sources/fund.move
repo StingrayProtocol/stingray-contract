@@ -46,6 +46,7 @@ module stingray::fund{
     const EInTradingPeriod: u64 = 21;
     const EEmptyArray: u64 = 22;
     const ETraderCanNotDeInvest: u64 = 23;
+    const EFundNotMatched: u64 = 24;
 
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -158,6 +159,8 @@ module stingray::fund{
 
     public struct Claimed<phantom CoinType> has copy, drop{
         receiver: address,
+        fund: ID,
+        shares: vector<ID>,
         amount: u64,
     }
 
@@ -705,26 +708,42 @@ module stingray::fund{
     public fun claim<FundCoinType>(
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
-        shares: FundShare,
+        mut shares: vector<FundShare>,
         ctx: &mut TxContext,
     ): (Coin<FundCoinType>){
 
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_not_settle(fund);
 
-        let owned_share_amount = shares.invest_amount();
-        
-        let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner());
-        fund_share::burn<FundCoinType>(config, burn_request, shares);
+        let loop_times = shares.length();
+        let mut total_withdraw_share_amount:u64 = 0;
+        let mut current_idx = 0;
+        let mut share_ids = vector::empty<ID>();
+
+        while(current_idx < loop_times){
+            let share = shares.pop_back();
+            share_ids.push_back(share.id());
+            assert_if_fund_type_not_matched<FundCoinType>(fund, &share);
+            fund.share_amount = fund.share_amount - share.invest_amount();
+            total_withdraw_share_amount = total_withdraw_share_amount + share.invest_amount();
+            current_idx = current_idx + 1;
+            
+            let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner());
+            fund_share::burn<FundCoinType>(config, burn_request, share);
+        };
+
+        vector::destroy_empty(shares);
         
         if (fund.after_amount < fund.base ){
             let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-            let withdraw_amount = fund.after_amount * owned_share_amount / fund.share_amount;
+            let withdraw_amount = fund.after_amount * total_withdraw_share_amount / fund.share_amount;
 
             event::emit(
                 Claimed<FundCoinType>{
                     receiver: ctx.sender(),
+                    fund: *fund.id.as_inner(),
                     amount: withdraw_amount,
+                    shares: share_ids,
                 }
             );
 
@@ -735,25 +754,29 @@ module stingray::fund{
                 let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
                 let platform_fee = (fund.after_amount - fund.base) * config.platform_fee() / config.base_percentage();
                 let trader_fee = (fund.after_amount - fund.base) * fund.trader_fee / config.base_percentage();
-                let investor_amount = (fund.after_amount - platform_fee - trader_fee) * owned_share_amount / fund.share_amount;
+                let investor_amount = (fund.after_amount - platform_fee - trader_fee) * total_withdraw_share_amount / fund.share_amount;
                 let to_investor_balance = total_asset.split<FundCoinType>(investor_amount);
 
                 event::emit(
                     Claimed<FundCoinType>{
                         receiver: ctx.sender(),
+                        fund: *fund.id.as_inner(),
                         amount: investor_amount,
+                        shares: share_ids,
                     }
                 );
 
                 coin::from_balance<FundCoinType>(to_investor_balance, ctx)
             }else{
                 let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-                let final_amount = fund.base * owned_share_amount / fund.share_amount;
+                let final_amount = fund.base * total_withdraw_share_amount / fund.share_amount;
                 
                 event::emit(
                     Claimed<FundCoinType>{
                         receiver: ctx.sender(),
+                        fund: *fund.id.as_inner(),
                         amount: final_amount,
+                        shares: share_ids,
                     }
                 );
                 coin::from_balance<FundCoinType>(total_asset.split(final_amount), ctx)
@@ -1450,6 +1473,13 @@ module stingray::fund{
         share: &FundShare,
     ){
         assert!(!share.is_init(), ETraderCanNotDeInvest);
+    }
+
+    fun assert_if_fund_type_not_matched<FundCoinType>(
+        fund: &Fund<FundCoinType>,
+        share: &FundShare,
+    ){      
+        assert!(*fund.id.as_inner() == share.fund_id(), EFundNotMatched);
     }
 
     fun pay_platforem_fee<CoinType>(
