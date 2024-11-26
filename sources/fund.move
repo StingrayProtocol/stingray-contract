@@ -45,6 +45,7 @@ module stingray::fund{
     const EAlreadySettled: u64 = 20;
     const EInTradingPeriod: u64 = 21;
     const EEmptyArray: u64 = 22;
+    const ETraderCanNotDeInvest: u64 = 23;
 
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -216,7 +217,7 @@ module stingray::fund{
             is_arena,
             limit_amount,
             is_settle: false,
-            share_amount: 0,
+            share_amount: init_amount,
             after_amount: 0,
             expected_roi,
         };
@@ -250,6 +251,7 @@ module stingray::fund{
         let share_request = fund_share::create_mint_request(
             config,
             *fund.id.as_inner(), 
+            true,
             fund.trader, 
             fund_type, 
             init_amount, 
@@ -297,6 +299,7 @@ module stingray::fund{
         fund_share::create_mint_request(
             config,
             *fund.id.as_inner(), 
+            false,
             fund.trader, 
             fund_type, 
             invest_amount, 
@@ -329,6 +332,7 @@ module stingray::fund{
         let mut current_idx = 0;
         while(current_idx < loop_times){
             let share = shares.pop_back();
+            assert_if_deinvest_init_share(&share);
             total_share.join(share);
             current_idx = current_idx + 1;
         };
@@ -1440,6 +1444,12 @@ module stingray::fund{
         shares: &vector<FundShare>,
     ){
         assert!(shares.length() != 0, EEmptyArray);
+    }
+
+    fun assert_if_deinvest_init_share(
+        share: &FundShare,
+    ){
+        assert!(!share.is_init(), ETraderCanNotDeInvest);
     }
 
     fun pay_platforem_fee<CoinType>(

@@ -10,6 +10,7 @@ module stingray::fund_share{
     public struct FundShare has key, store {
         id: UID,
         fund_id: ID,
+        is_init: bool,
         trader: ID,
         fund_type: String,
         invest_amount: u64,
@@ -37,6 +38,7 @@ module stingray::fund_share{
     // hot potato
     public struct MintRequest<phantom FundCoinType>{
         fund_id: ID,
+        is_init: bool,
         trader: ID,
         fund_type: String,
         invest_amount: u64,
@@ -58,11 +60,11 @@ module stingray::fund_share{
     const EFundShareFundIdNotMatched: u64 = 2;
     const EFundShareTraderNotMatched: u64 = 3;
     const EFundShareFundTypeNotMatched: u64 = 4;
-    const EFundShareEndTimeNotMatched: u64 = 5;
 
     public(package) fun create_mint_request<FundCoinType>(
         config: &GlobalConfig,
         fund_id: ID,
+        is_init: bool,
         trader: ID,
         fund_type: String,
         invest_amount: u64,
@@ -72,6 +74,7 @@ module stingray::fund_share{
         
         MintRequest{
             fund_id,
+            is_init,
             trader,
             fund_type,
             invest_amount,
@@ -100,6 +103,7 @@ module stingray::fund_share{
         let new_share = FundShare{
             id: object::new(ctx),
             fund_id: share.fund_id,
+            is_init: share.is_init,
             trader: share.trader,
             fund_type: share.fund_type,
             invest_amount: amount,
@@ -123,6 +127,7 @@ module stingray::fund_share{
         let FundShare{
             id: id,
             fund_id: _,
+            is_init: _,
             trader: _,
             fund_type: _,
             invest_amount: invest_amount,
@@ -151,6 +156,7 @@ module stingray::fund_share{
 
         let MintRequest{
             fund_id,
+            is_init, 
             trader,
             fund_type,
             invest_amount,
@@ -159,6 +165,7 @@ module stingray::fund_share{
         let share = FundShare{
             id: object::new(ctx),
             fund_id,
+            is_init,
             trader,
             fund_type,
             invest_amount,
@@ -190,6 +197,7 @@ module stingray::fund_share{
         let FundShare{
             id,
             fund_id:_,
+            is_init: _,
             trader:_,
             fund_type:_,
             invest_amount:_,
@@ -202,6 +210,12 @@ module stingray::fund_share{
         share: &FundShare,
     ): u64{
         share.invest_amount
+    }
+
+    public fun is_init(
+        share: &FundShare,
+    ): bool{
+        share.is_init
     }
 
     public fun id(
