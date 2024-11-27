@@ -243,7 +243,6 @@ module stingray::fund{
             );
         };
 
-
         // take mint share request
         let mut fund_type = string::utf8(b"Common");
         
@@ -724,12 +723,12 @@ module stingray::fund{
             let share = shares.pop_back();
             share_ids.push_back(share.id());
             assert_if_fund_type_not_matched<FundCoinType>(fund, &share);
-            fund.share_amount = fund.share_amount - share.invest_amount();
             total_withdraw_share_amount = total_withdraw_share_amount + share.invest_amount();
-            current_idx = current_idx + 1;
             
             let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner());
             fund_share::burn<FundCoinType>(config, burn_request, share);
+
+            current_idx = current_idx + 1;
         };
 
         vector::destroy_empty(shares);
@@ -1006,13 +1005,14 @@ module stingray::fund{
 
     fun take_1_liquidity_for_1_liquidity< TakeCoinType, PutCoinType, FundCoinType>(
         fund: &mut Fund<FundCoinType>,
-        amount: u64,
+        mut amount: u64,
         clock: &Clock,
     ): (Balance<TakeCoinType>, Take_1_Liquidity_For_1_Liquidity_Request<TakeCoinType, PutCoinType>){
         
         assert_if_take_action_not_available<FundCoinType>(fund, clock);
         assert_if_take_liquidity_not_in_fund<TakeCoinType, FundCoinType>(fund);
-        assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        //assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        amount = check_take_amount<TakeCoinType, FundCoinType>(fund, amount);
         assert_if_is_settled(fund);
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
@@ -1035,13 +1035,14 @@ module stingray::fund{
 
     fun take_1_liquidity_for_2_liquidity<TakeCoinType, PutCoinType1, PutCoinType2, FundCoinType>(
         fund: &mut Fund<FundCoinType>,
-        amount: u64,
+        mut amount: u64,
         clock: &Clock,
     ): (Balance<TakeCoinType>, Take_1_Liquidity_For_2_Liquidity_Request<TakeCoinType, PutCoinType1, PutCoinType2>){
         
         assert_if_take_action_not_available<FundCoinType>(fund, clock);
         assert_if_take_liquidity_not_in_fund<TakeCoinType, FundCoinType>(fund);
-        assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        // assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        amount = check_take_amount<TakeCoinType, FundCoinType>(fund, amount);
         assert_if_is_settled(fund);
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
@@ -1065,13 +1066,14 @@ module stingray::fund{
 
     fun take_1_liquidity_for_1_nonliquidity<TakeCoinType, PutAsset: store, FundCoinType>(
         fund: &mut Fund<FundCoinType>,
-        amount: u64,
+        mut amount: u64,
         clock: &Clock,
     ): (Balance<TakeCoinType>, Take_1_Liquidity_For_1_NonLiquidity_Request<TakeCoinType, PutAsset>){
         
         assert_if_take_action_not_available<FundCoinType>(fund, clock);
         assert_if_take_liquidity_not_in_fund<TakeCoinType, FundCoinType>(fund);
-        assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        //assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(fund, amount);
+        amount = check_take_amount<TakeCoinType, FundCoinType>(fund, amount);
         assert_if_is_settled(fund);
 
         let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>());
@@ -1095,16 +1097,18 @@ module stingray::fund{
 
     fun take_2_liquidity_for_1_nonliquidity<TakeCoinType1, TakeCoinType2, PutAsset, FundCoinType>(
         fund: &mut Fund<FundCoinType>,
-        amount1: u64,
-        amount2: u64,
+        mut amount1: u64,
+        mut amount2: u64,
         clock: &Clock,
     ): (Balance<TakeCoinType1>, Balance<TakeCoinType2>, Take_2_Liquidity_For_1_NonLiquidity_Request<TakeCoinType1, TakeCoinType2, PutAsset>){
         
         assert_if_take_action_not_available<FundCoinType>(fund, clock);
         assert_if_take_liquidity_not_in_fund<TakeCoinType1, FundCoinType>(fund);
         assert_if_take_liquidity_not_in_fund<TakeCoinType2, FundCoinType>(fund);
-        assert_if_take_amount_not_enough<TakeCoinType1, FundCoinType>(fund, amount1);
-        assert_if_take_amount_not_enough<TakeCoinType2, FundCoinType>(fund, amount2);
+        // assert_if_take_amount_not_enough<TakeCoinType1, FundCoinType>(fund, amount1);
+        // assert_if_take_amount_not_enough<TakeCoinType2, FundCoinType>(fund, amount2);
+        amount1 = check_take_amount<TakeCoinType1, FundCoinType>(fund, amount1);
+        amount2 = check_take_amount<TakeCoinType2, FundCoinType>(fund, amount2);
         assert_if_is_settled(fund);
 
         let total_balance1 = fund.asset.assets.borrow_mut<TypeName, Balance<TakeCoinType1>>(type_name::get<Balance<TakeCoinType1>>());
@@ -1321,6 +1325,20 @@ module stingray::fund{
 
     }
 
+
+    fun check_take_amount<TakeCoinType, FundCoinType>(
+        fund: &Fund<FundCoinType>,
+        amount: u64,
+    ): u64{
+
+        let fund_amount = fund.asset.assets.borrow<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>()).value();
+        if (amount >= fund_amount){
+            fund_amount
+        }else{
+            amount
+        }
+    }
+
     fun assert_if_over_max_trader_fee(
         config: &GlobalConfig,
         input_trader_fee: u64,
@@ -1340,12 +1358,6 @@ module stingray::fund{
         assert!(fund.asset.assets.contains(type_name::get<TakeAsset>()), ETakeNonLiquidityNotInFund);
     }
 
-    fun assert_if_take_amount_not_enough<TakeCoinType, FundCoinType>(
-        fund: &Fund<FundCoinType>,
-        amount: u64,
-    ){
-        assert!(fund.asset.assets.borrow<TypeName, Balance<TakeCoinType>>(type_name::get<Balance<TakeCoinType>>()).value() >= amount, EFundTakeLiquidityNotEnough);
-    }
 
     fun assert_if_put_amount_is_zero(request_put_amount: u64){
         assert!(request_put_amount != 0 , EPutAmountNotSet);
