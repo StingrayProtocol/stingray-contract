@@ -29,7 +29,7 @@ module stingray::config{
             id: object::new(ctx),
             version: 1u64,
             max_trader_fee: 2000,
-            min_rewards: 1000000,
+            min_rewards: 10000,
             trader_init_percentage: 100,
             min_base: 10000,
             settle_percentage: 250,
