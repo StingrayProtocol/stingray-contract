@@ -405,6 +405,17 @@ module stingray::fund{
         fund.allow_list.add<address, bool>(new_account, true);
     }
 
+    public fun remove_allow_list<FundCoinType>(
+        fund: &mut Fund<FundCoinType>,
+        fund_cap: &FundCap,
+        remove_account: address,
+    ){
+        assert_if_fund_cap_and_fund_not_matched(fund, fund_cap);
+        assert_if_not_in_allow_list(fund, remove_account);
+        fund.allow_list.remove<address, bool>(remove_account);
+    }
+
+
     // take asset function , i.e scallop deposit, cetus swap
     public fun take_1_liquidity_for_1_liquidity_by_trader< TakeCoinType, PutCoinType, FundCoinType>(
         config: &GlobalConfig,
