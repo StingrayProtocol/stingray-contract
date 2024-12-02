@@ -16,8 +16,7 @@ module stingray::arena{
 
     use stingray::{
         config::{Self, AdminCap, GlobalConfig},
-        fund::{Fund},
-        trader::{Trader},
+        fund::{Self, Fund, FundCap,},
     };
 
     const VERSION: u64 = 1;
@@ -36,16 +35,15 @@ module stingray::arena{
     const ETypeNotMatched: u64 = 1;
     const EArenaTypeNotAllowed: u64 = 2;
     const ENotArriveAttendTime: u64 = 3;
-    const ETraderNotMatched: u64 = 4;
-    const EPreviousFund: u64 = 5;
-    const ETraderNotAttended: u64 = 6;
-    const EAttendTimeExpired: u64 = 7;
-    const EAlreadyAttendAnotherArena: u64 = 8;
-    const EArenaTypeNotDefined: u64 = 9;
-    const EOverEndTime: u64 = 10;
-    const EHostNotForThisArena: u64 = 11;
-    const EAlreadyClaimed: u64 = 12;
-    const ENotArrivedEndTime:u64 = 13;
+    const EPreviousFund: u64 = 4;
+    const ETraderNotAttended: u64 = 5;
+    const EAttendTimeExpired: u64 = 6;
+    const EAlreadyAttendAnotherArena: u64 = 7;
+    const EArenaTypeNotDefined: u64 = 8;
+    const EOverEndTime: u64 = 9;
+    const EHostNotForThisArena: u64 = 10;
+    const EAlreadyClaimed: u64 = 11;
+    const ENotArrivedEndTime:u64 = 12;
 
     const BASE: u128 = 1_000_000_000;
     const RANK_AMOUNT: u64 = 3;
@@ -58,11 +56,11 @@ module stingray::arena{
         id: UID,
         arena: ID,
         bonus: Balance<CoinType>,
-        is_claimed: Table<ID, bool>,
+        is_claimed: Table<address, bool>,
     }
 
     public struct Result has store{
-        trader: ID,
+        trader: address,
         result: u128,
     }
 
@@ -73,8 +71,8 @@ module stingray::arena{
         attend_duration: u64,
         invest_duration: u64,
         end_time: u64,
-        funds: Table<ID, ID>, // trader -> fund
-        traders: vector<ID>,
+        funds: Table<address, ID>, // trader -> fund
+        traders: vector<address>,
         result: Table<u64, Result>,
         is_rank_claimed: Table<ID, bool>,
     }
@@ -103,7 +101,7 @@ module stingray::arena{
         name: String,
         description: String, 
         fund_img: String,
-        trader: ID,
+        trader: address,
         trader_fee: u64,
         start_time: u64,
         invest_duration: u64,
@@ -118,7 +116,7 @@ module stingray::arena{
     }
 
     public struct ClaimRank has copy, drop{
-        trader: ID,
+        trader: address,
         arena: ID,
         fund: ID,
         rank: u64,
@@ -159,7 +157,7 @@ module stingray::arena{
             id: object::new(ctx),
             arena: *arena.id.as_inner(),
             bonus: init_bouns.into_balance(),
-            is_claimed: table::new<ID, bool>(ctx),
+            is_claimed: table::new<address, bool>(ctx),
         };
 
         transfer::share_object(host);
@@ -205,8 +203,8 @@ module stingray::arena{
                 attend_duration,
                 invest_duration,
                 end_time: start_time + attend_duration + invest_duration + (86400000 * 7),
-                funds: table::new<ID, ID>(ctx),
-                traders: vector::empty<ID>(),
+                funds: table::new<address, ID>(ctx),
+                traders: vector::empty<address>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
@@ -218,8 +216,8 @@ module stingray::arena{
                 attend_duration,
                 invest_duration,
                 end_time: start_time + attend_duration + invest_duration + (86400000 * 30),
-                funds: table::new<ID, ID>(ctx),
-                traders: vector::empty<ID>(),
+                funds: table::new<address, ID>(ctx),
+                traders: vector::empty<address>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
@@ -231,8 +229,8 @@ module stingray::arena{
                 attend_duration,
                 invest_duration,
                 end_time: start_time + attend_duration + invest_duration + (86400000 * 90),
-                funds: table::new<ID, ID>(ctx),
-                traders: vector::empty<ID>(),
+                funds: table::new<address, ID>(ctx),
+                traders: vector::empty<address>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
@@ -244,8 +242,8 @@ module stingray::arena{
                 attend_duration,
                 invest_duration,
                 end_time: start_time + attend_duration + invest_duration + (86400000 * 365),
-                funds: table::new<ID, ID>(ctx),
-                traders: vector::empty<ID>(),
+                funds: table::new<address, ID>(ctx),
+                traders: vector::empty<address>(),
                 result,
                 is_rank_claimed: table::new<ID,bool>(ctx)
             }
@@ -254,13 +252,14 @@ module stingray::arena{
 
     public fun attend<CoinType>(
         config: &GlobalConfig,
+        fund_cap: &FundCap,
         request: ArenaRequest<CoinType>,
         arena: &mut Arena<CoinType>,
         fund: &mut Fund<CoinType>,
-        trader: &Trader,
         clock: &Clock,
     ){
         config::assert_if_version_not_matched(config, VERSION);
+        fund::assert_if_fund_cap_and_fund_not_matched(fund, fund_cap);
         assert_if_already_attend_other_arena(fund);
 
         assert_if_trader_already_attend(arena, fund);
@@ -268,7 +267,6 @@ module stingray::arena{
         assert_if_fund_is_previous(fund, arena);
         let request_type = request.arena_type;
         assert_if_fund_type_not_matched(arena, request_type);
-        assert_if_fund_trader_not_matched<CoinType>(fund, trader);
         // consume hot potato
         let ArenaRequest { 
             arena_type: _,
@@ -283,7 +281,7 @@ module stingray::arena{
         // update fund
         fund.update_time(arena.start_time + arena.attend_duration, arena.invest_duration, arena.end_time);
         fund.set_is_arena(true);
-        arena.traders.push_back(trader.id());
+        arena.traders.push_back(fund.trader());
         
         event::emit(
             Attended<CoinType>{
@@ -304,13 +302,15 @@ module stingray::arena{
     }
 
     public fun challenge<CoinType>(
+        config: &GlobalConfig, 
         arena: &mut Arena<CoinType>,
+        fund_cap: &FundCap,
         fund: &mut Fund<CoinType>,
-        trader: &Trader,
         clock: &Clock,
     ){
-        assert_if_fund_trader_not_matched(fund, trader);
-        assert_if_trader_not_attended_arena(arena, trader);
+        config::assert_if_version_not_matched(config, VERSION);
+        fund::assert_if_fund_cap_and_fund_not_matched(fund, fund_cap); 
+        assert_if_trader_not_attended_arena(arena, fund.trader());
         assert_if_over_end_time<CoinType>(arena, clock);
 
         let mut result = 0;
@@ -324,14 +324,14 @@ module stingray::arena{
         if (result > 0){
             
             let mut current_idx = 0;
-            let mut key =  trader.id();
+            let mut key =  fund.trader();
             let mut value = result;
 
             while(current_idx < RANK_AMOUNT){
                 if (!arena.result.contains(current_idx)){
                     arena.result.add(current_idx, 
                         Result{
-                            trader: trader.id(),
+                            trader: fund.trader(),
                             result: result,
                         });
                     is_replace = true;
@@ -364,7 +364,7 @@ module stingray::arena{
                     fund_id: *fund.id().as_inner(),
                     is_success: true,
                 });
-            }else if (key != trader.id()){
+            }else if (key != fund.trader()){
                 event::emit(Challenge{
                     fund_id: *fund.id().as_inner(),
                     is_success: true,
@@ -389,14 +389,17 @@ module stingray::arena{
     public fun claim_rank<CoinType>(
         config: &GlobalConfig,
         host: &mut BonusHost<CoinType>,
+        fund_cap: &FundCap,
         arena: &mut Arena<CoinType>,
         fund: &mut Fund<CoinType>,
-        trader: &mut Trader,
         clock: &Clock,
         ctx: &mut TxContext,
     ): Coin<CoinType>{
+        let trader = fund.trader();
+        config::assert_if_version_not_matched(config, VERSION);
+        fund::assert_if_fund_cap_and_fund_not_matched(fund, fund_cap); 
+
         assert_if_host_not_for_this_arena(host, arena);
-        assert_if_fund_trader_not_matched(fund, trader);
         assert_if_trader_not_attended_arena(arena, trader);
         assert_if_already_claimed(host, trader);
         assert_if_not_arrived_end_time(arena, clock);
@@ -408,24 +411,24 @@ module stingray::arena{
         let certificate = df::borrow_mut<ID, Certificate>(&mut arena.id, *fund.id().as_inner());
         let mut rank = 0;
         let mut receive_value: u64 = 0;
-        if (trader.id() == first.trader){
+        if (trader == first.trader){
             certificate.rank = 1;
             rank = 1;
             receive_value = host.bonus.value() * FIRST_PLACE / config.base_percentage();
-        }else if (trader.id() == second.trader){
+        }else if (trader == second.trader){
             certificate.rank = 2;
             rank = 2;
             receive_value = host.bonus.value() * SECOND_PLACE / config.base_percentage();
-        }else if (trader.id() == third.trader){
+        }else if (trader == third.trader){
             certificate.rank = 3;
             rank = 3;
             receive_value = host.bonus.value() * THIRD_PLACE / config.base_percentage();
         };
         
-        host.is_claimed.add(trader.id(), true);
+        host.is_claimed.add(trader, true);
         event::emit(
             ClaimRank{
-                trader: trader.id(),
+                trader: trader,
                 fund: *fund.id().as_inner(),
                 arena: *arena.id.as_inner(),
                 rank,
@@ -475,13 +478,6 @@ module stingray::arena{
         assert!(clock.timestamp_ms() <= (arena.start_time + arena.attend_duration), EAttendTimeExpired);
     }
 
-    fun assert_if_fund_trader_not_matched<FundCoinType>(
-        fund: &Fund<FundCoinType>,
-        trader: &Trader,
-    ){
-        assert!(fund.trader() == trader.id(), ETraderNotMatched);
-    }
-
     fun assert_if_fund_is_previous<FundCoinType>(
         fund: &Fund<FundCoinType>,
         arena: &Arena<FundCoinType>,
@@ -491,9 +487,9 @@ module stingray::arena{
 
     fun assert_if_trader_not_attended_arena<FundCoinType>(   
         arena: &Arena<FundCoinType>,
-        trader: &Trader,
+        trader: address,
     ){
-        assert!(arena.funds.contains(trader.id()), ETraderNotAttended );
+        assert!(arena.funds.contains(trader), ETraderNotAttended );
     }
 
     fun assert_if_already_attend_other_arena<FundCoinType>(
@@ -525,9 +521,9 @@ module stingray::arena{
 
     fun assert_if_already_claimed<CoinType>(
         host: & BonusHost<CoinType>,
-        trader: &Trader,
+        trader: address,
     ){
-        assert!(!host.is_claimed.contains(trader.id()), EAlreadyClaimed);
+        assert!(!host.is_claimed.contains(trader), EAlreadyClaimed);
     }
 
     fun assert_if_not_arrived_end_time<FundCoinType>(

@@ -11,7 +11,7 @@ module stingray::fund_share{
         id: UID,
         fund_id: ID,
         is_init: bool,
-        trader: ID,
+        trader: address,
         fund_type: String,
         invest_amount: u64,
     }
@@ -39,7 +39,7 @@ module stingray::fund_share{
     public struct MintRequest<phantom FundCoinType>{
         fund_id: ID,
         is_init: bool,
-        trader: ID,
+        trader: address,
         fund_type: String,
         invest_amount: u64,
     }
@@ -65,7 +65,7 @@ module stingray::fund_share{
         config: &GlobalConfig,
         fund_id: ID,
         is_init: bool,
-        trader: ID,
+        trader: address,
         fund_type: String,
         invest_amount: u64,
     ): MintRequest<FundCoinType>{
