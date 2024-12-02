@@ -111,23 +111,27 @@ module stingray::trader{
     public entry fun mint(
         config: &mut GlobalConfig,
         controller: &mut HostController,
-        sui_ns: &SuinsRegistration,
+        //sui_ns: &SuinsRegistration,
         pfp_img: String, // blob id 
         card_img: String, // blob id 
         description: String,
-        coin: Coin<SUI>,
+        //coin: Coin<SUI>,
         clock: &Clock,
         ctx: &mut TxContext,
     ) {
 
         config::assert_if_version_not_matched(config, VERSION);
         assert_if_already_minted(controller, ctx);
-        let balance = coin.into_balance();
+        //let balance = coin.into_balance();
         //assert_if_ns_expired_by_ns(&sui_ns, clock);
-        assert_if_balance_not_matched(controller, &balance );
+        //assert_if_balance_not_matched(controller, &balance );
 
-        let first_name = *sui_ns.domain().sld();
-        let last_name =  *sui_ns.domain().tld();
+        // let first_name = *sui_ns.domain().sld();
+        // let last_name =  *sui_ns.domain().tld();
+
+        let first_name = string::utf8(b"");
+        let last_name = string::utf8(b"");
+        
         
         let mut name = string::utf8(b"");
         name.append(first_name);
@@ -143,7 +147,7 @@ module stingray::trader{
             birth: clock.timestamp_ms(),
         };
         
-        controller.balance.join(balance);
+        //controller.balance.join(balance);
 
         event::emit( 
             Mint{

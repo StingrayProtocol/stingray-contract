@@ -10,10 +10,10 @@ module stingray::fund_share{
     public struct FundShare has key, store {
         id: UID,
         fund_id: ID,
+        is_init: bool,
         trader: ID,
         fund_type: String,
         invest_amount: u64,
-        end_time: u64,
     }
 
     public struct Invested has copy, drop{
@@ -38,15 +38,14 @@ module stingray::fund_share{
     // hot potato
     public struct MintRequest<phantom FundCoinType>{
         fund_id: ID,
+        is_init: bool,
         trader: ID,
         fund_type: String,
         invest_amount: u64,
-        end_time: u64,
     }
 
     public struct BurnRequest<phantom FundCoinType>{
         fund_id: ID,
-        end_time: u64,
     }
 
 
@@ -61,40 +60,36 @@ module stingray::fund_share{
     const EFundShareFundIdNotMatched: u64 = 2;
     const EFundShareTraderNotMatched: u64 = 3;
     const EFundShareFundTypeNotMatched: u64 = 4;
-    const EFundShareEndTimeNotMatched: u64 = 5;
 
     public(package) fun create_mint_request<FundCoinType>(
         config: &GlobalConfig,
         fund_id: ID,
+        is_init: bool,
         trader: ID,
         fund_type: String,
         invest_amount: u64,
-        end_time: u64,
-
     ): MintRequest<FundCoinType>{
 
         config::assert_if_version_not_matched(config, VERSION);
         
         MintRequest{
             fund_id,
+            is_init,
             trader,
             fund_type,
             invest_amount,
-            end_time,
             }
     }
 
     public(package) fun create_burn_request<FundCoinType>(
         config: &GlobalConfig,
         fund_id: ID,
-        end_time: u64,
     ): BurnRequest<FundCoinType>{
 
         config::assert_if_version_not_matched(config, VERSION);
         
         BurnRequest{
             fund_id,
-            end_time,
         }
     }
 
@@ -108,10 +103,10 @@ module stingray::fund_share{
         let new_share = FundShare{
             id: object::new(ctx),
             fund_id: share.fund_id,
+            is_init: share.is_init,
             trader: share.trader,
             fund_type: share.fund_type,
             invest_amount: amount,
-            end_time: share.end_time,
         };
 
         event::emit(Splited{
@@ -132,10 +127,10 @@ module stingray::fund_share{
         let FundShare{
             id: id,
             fund_id: _,
+            is_init: _,
             trader: _,
             fund_type: _,
             invest_amount: invest_amount,
-            end_time: _,
         } = to_be_join;
         
         share.invest_amount = share.invest_amount + invest_amount;
@@ -148,7 +143,6 @@ module stingray::fund_share{
         });
 
         object::delete(id);
-
     }
 
     public fun mint<FundCoinType>(
@@ -161,19 +155,19 @@ module stingray::fund_share{
 
         let MintRequest{
             fund_id,
+            is_init, 
             trader,
             fund_type,
             invest_amount,
-            end_time,
         } = request;
 
         let share = FundShare{
             id: object::new(ctx),
             fund_id,
+            is_init,
             trader,
             fund_type,
             invest_amount,
-            end_time
         };
 
         event::emit(Invested{
@@ -195,7 +189,6 @@ module stingray::fund_share{
 
         let BurnRequest{
             fund_id: request_fund_id,
-            end_time: _,
         } = request;
 
         assert_if_fund_id_not_matched(&share, request_fund_id);
@@ -203,10 +196,10 @@ module stingray::fund_share{
         let FundShare{
             id,
             fund_id:_,
+            is_init: _,
             trader:_,
             fund_type:_,
             invest_amount:_,
-            end_time:_
         } = share;
 
         object::delete(id);
@@ -218,10 +211,22 @@ module stingray::fund_share{
         share.invest_amount
     }
 
+    public fun is_init(
+        share: &FundShare,
+    ): bool{
+        share.is_init
+    }
+
     public fun id(
         share: &FundShare,
     ): ID{
         *share.id.as_inner()
+    }
+
+    public fun fund_id(
+        share: &FundShare,
+    ): ID{
+        share.fund_id
     }
 
 
@@ -246,6 +251,5 @@ module stingray::fund_share{
         assert!(share.fund_id == to_be_join.fund_id, EFundShareFundIdNotMatched);
         assert!(share.trader == to_be_join.trader, EFundShareTraderNotMatched);
         assert!(share.fund_type == to_be_join.fund_type, EFundShareFundTypeNotMatched);
-        assert!(share.end_time == to_be_join.end_time, EFundShareEndTimeNotMatched);
     }
 }
