@@ -16,6 +16,8 @@ module stingray::fund{
     use stingray::{
         config::{Self, GlobalConfig, AdminCap},
         fund_share::{Self, MintRequest, FundShare},
+        voucher::{Self, VoucherConsumeRequest, SponsorPool, SponsorPoolHost},
+        math::{Self},
     };
 
     const VERSION: u64 = 1;
@@ -48,6 +50,8 @@ module stingray::fund{
     const EAccountNotInAllowedList: u64 = 23;
     const EAccountAlreadyInAllowedList: u64 = 24;
     const EFundCapAndFundNotMatched: u64 = 26;
+    const EVoucherArrayIsZero: u64 = 27;
+    const EBaseProviderNotMatched: u64 = 28;
 
     // hot potato 
     public struct Take_1_Liquidity_For_1_Liquidity_Request<phantom TakeCoinType, phantom PutCoinType>{
@@ -99,7 +103,6 @@ module stingray::fund{
         end_time: u64, 
     }
     
-
     public struct Fund<phantom CoinType> has key {
         id: UID,
         name: String,
@@ -257,13 +260,15 @@ module stingray::fund{
             fund_type=string::utf8(b"Arena");
         };
 
-        let share_request = fund_share::create_mint_request(
+        let share_request = fund_share::create_mint_request<FundCoinType>(
             config,
             *fund.id.as_inner(), 
             true,
             fund.trader, 
             fund_type, 
             init_amount, 
+            ctx.sender(),
+            ctx.sender(),
         );
         let fund_cap = FundCap{
             id: object::new(ctx),
@@ -287,7 +292,7 @@ module stingray::fund{
     }
 
     // invest fund
-    public fun invest<FundCoinType>(
+    public fun invest_with_asset<FundCoinType>(
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
         invest_coin: Coin<FundCoinType>,
@@ -295,22 +300,8 @@ module stingray::fund{
         ctx: &mut TxContext,
     ): MintRequest<FundCoinType>{
         config::assert_if_version_not_matched(config, VERSION);
-        assert_if_over_invest_duration(fund, clock);
-        assert_if_not_arrived_invest_duration(fund, clock);
-
-        if (fund.allow_list.length() != 0){
-            assert_if_not_in_allow_list(fund, ctx.sender());
-        };
-
-        let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-        let invest_amount = invest_coin.value();
-        fund.base = fund.base + invest_amount;
-        
-        assert_if_base_over_limit<FundCoinType>(fund, (total_base.value() + invest_amount));
-
-        // put coin into asset bag
-        let asset_type = type_name::get<Balance<FundCoinType>>();
-        fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(asset_type).join( invest_coin.into_balance());
+        let invest_amount= invest_coin.value();
+        invest(fund, invest_coin, clock, ctx);
 
         // take mint share request
         let mut fund_type = string::utf8(b"Common");
@@ -319,7 +310,6 @@ module stingray::fund{
             fund_type=string::utf8(b"Arena");
         };
 
-        fund.share_amount = fund.share_amount + invest_amount;
 
         fund_share::create_mint_request(
             config,
@@ -327,7 +317,56 @@ module stingray::fund{
             false,
             fund.trader, 
             fund_type, 
-            invest_amount, 
+            invest_amount,
+            ctx.sender(),
+            ctx.sender(), 
+            )
+    }
+
+    public fun invest_with_voucher<FundCoinType>(
+        config: &GlobalConfig,
+        mut requests: vector<VoucherConsumeRequest<FundCoinType>>,
+        fund: &mut Fund<FundCoinType>,
+        invest_coin: Coin<FundCoinType>,
+        clock: &Clock,
+        ctx: &mut TxContext,
+    ): MintRequest<FundCoinType>{
+        config::assert_if_version_not_matched(config, VERSION);
+        assert_if_empty_voucher(&requests);
+        
+        let invest_amount= invest_coin.value();
+
+        let mut request_balance_amount:u64 = 0;
+        let mut current_idx: u64 = 0; 
+        let base_provider: ID = requests.borrow(0).base_provider();
+        while(requests.length() != 0){
+            let request = requests.pop_back();
+            assert_if_provider_not_matched(&request, base_provider );
+            request_balance_amount = request_balance_amount + request.request_amount();
+            request.burn_request();
+            current_idx = current_idx + 1;
+        };
+
+        requests.destroy_empty();
+
+        invest(fund, invest_coin, clock, ctx);
+
+        // take mint share request
+        let mut fund_type = string::utf8(b"Common");
+        
+        if (fund.is_arena){
+            fund_type=string::utf8(b"Arena");
+        };
+
+        fund_share::create_mint_request(
+            config,
+            *fund.id.as_inner(), 
+            false,
+            fund.trader, 
+            fund_type, 
+            invest_amount,
+            base_provider.id_to_address(),
+            ctx.sender(), 
             )
     }
 
@@ -649,7 +688,8 @@ module stingray::fund{
         settle_request.is_finished = true;
 
     }
-    
+
+    #[allow(lint(self_transfer))]
     public fun settle<FundCoinType>(
         config: &GlobalConfig,
         fund: &mut Fund<FundCoinType>,
@@ -679,76 +719,52 @@ module stingray::fund{
         );
         
         // calculate rewards
-        let total_base = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>()).value();
+        let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+        let total_amount = total_balance.value();
         let fund_base = fund.base;
-        let expected_base = fund_base * (config.base_percentage() + fund.expected_roi) /config.base_percentage();
-        fund.after_amount = total_base;
-        if (total_base > fund_base){ // positive rewards
-            if ((total_base - fund_base) < config.min_rewards()){ // less than min reward threshold
-                pay_platforem_fee(config, fund, (total_base - fund_base), ctx);
-                
-                if(total_base >= expected_base){
-                    event::emit(
-                        SettleResult{
-                            fund: fund_id,
-                            trader: fund.trader(),
-                            is_matched_roi: true,
-                        }
-                    );
-                }else{
-                    event::emit(
-                        SettleResult{
-                            fund: fund_id,
-                            trader: fund.trader(),
-                            is_matched_roi: false,
-                        }
-                    );
-                };
-
-                coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
+        let expected_amount = fund_base * (config.base_percentage() + fund.expected_roi) /config.base_percentage();
+        fund.after_amount = total_amount;
+        if (total_amount > fund_base){ // positive rewards
+            let reward_amount = total_amount - fund_base;
+            let platform_fee_amount = math::ceil(reward_amount, config.platform_fee_percentage(), config.base_percentage());
+            let platform_fee_balance = total_balance.split(platform_fee_amount);
+            transfer::public_transfer(coin::from_balance<FundCoinType>(platform_fee_balance, ctx), ctx.sender());
+            let to_settler_amount = math::ceil(reward_amount, config.settle_percentage(), config.base_percentage());
+            let to_settle_balance = total_balance.split(to_settler_amount);
+            if(total_amount >= expected_amount){
+                event::emit(
+                    SettleResult{
+                        fund: fund_id,
+                        trader: fund.trader(),
+                        is_matched_roi: true,
+                    }
+                );
             }else{
-                let total = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-                let reward_amount = total_base - fund_base;
-                let platform_fee = reward_amount * config.platform_fee() / config.base_percentage();
-                let to_settler_value = reward_amount *  config.settle_percentage() / config.base_percentage();
-                let to_settle_balance = total.split(to_settler_value);
-                pay_platforem_fee(config, fund, platform_fee, ctx);
-
-                if(total_base >= expected_base){
-                    event::emit(
-                        SettleResult{
-                            fund: fund_id,
-                            trader: fund.trader(),
-                            is_matched_roi: true,
-                        }
-                    );
-                }else{
-                    event::emit(
-                        SettleResult{
-                            fund: fund_id,
-                            trader: fund.trader(),
-                            is_matched_roi: false,
-                        }
-                    );
-                };
-
-                coin::from_balance<FundCoinType>(to_settle_balance, ctx)
-            }
+                event::emit(
+                    SettleResult{
+                        fund: fund_id,
+                        trader: fund.trader(),
+                        is_matched_roi: false,
+                    }
+                );
+            };
+            coin::from_balance<FundCoinType>(to_settle_balance, ctx)
         }else{
             event::emit(
-            SettleResult{
-                fund: fund_id,
-                trader: fund.trader(),
-                is_matched_roi: false,
+                SettleResult{
+                    fund: fund_id,
+                    trader: fund.trader(),
+                    is_matched_roi: false,
                 }
             );
             coin::from_balance<FundCoinType>(balance::zero<FundCoinType>(), ctx)
         }
-
     }
 
     public fun claim<FundCoinType>(
         config: &GlobalConfig,
+        host: &SponsorPoolHost,
+        pool: &mut SponsorPool<FundCoinType>,
         fund: &mut Fund<FundCoinType>,
         mut shares: vector<FundShare>,
         ctx: &mut TxContext,
@@ -758,16 +774,23 @@ module stingray::fund{
         assert_if_not_settle(fund);
 
         let loop_times = shares.length();
-        let mut total_withdraw_share_amount:u64 = 0;
+        //let mut total_withdraw_share_amount:u64 = 0;
         let mut current_idx = 0;
         let mut share_ids = vector::empty<ID>();
 
+        let mut voucher_share_amount = 0;
+        let mut common_share_amount = 0;
         while(current_idx < loop_times){
             let share = shares.pop_back();
             share_ids.push_back(share.id());
             assert_if_fund_type_not_matched<FundCoinType>(fund, &share);
-            total_withdraw_share_amount = total_withdraw_share_amount + share.invest_amount();
-            
+            //total_withdraw_share_amount = total_withdraw_share_amount + share.invest_amount();
+            if (object::id_from_address(share.base_receiver()).id_to_bytes() == voucher::sponsor_pool<FundCoinType>(host).id_to_bytes() ){
+                voucher_share_amount = voucher_share_amount + share.invest_amount();
+            }else{
+                common_share_amount = common_share_amount + share.invest_amount();
+            };
+
             let burn_request = fund_share::create_burn_request<FundCoinType>(config, *fund.id.as_inner());
             fund_share::burn<FundCoinType>(config, burn_request, share);
 
@@ -777,8 +800,11 @@ module stingray::fund{
         vector::destroy_empty(shares);
         
         if (fund.after_amount < fund.base ){
-            let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-            let withdraw_amount = fund.after_amount * total_withdraw_share_amount / fund.share_amount;
+            let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+            let withdraw_amount = fund.after_amount * common_share_amount / fund.share_amount;
+            let to_pool_amount = fund.after_amount * voucher_share_amount / fund.share_amount;
+            let to_pool_balance = total_balance.split<FundCoinType>(to_pool_amount);
+            voucher::put_back(pool, to_pool_balance); 
 
             event::emit(
                 Claimed<FundCoinType>{
@@ -789,15 +815,18 @@ module stingray::fund{
                 }
             );
 
-            coin::from_balance<FundCoinType>(total_asset.split(withdraw_amount), ctx)
+            coin::from_balance<FundCoinType>(total_balance.split(withdraw_amount), ctx)
         }else{
             // calculate rewards
-            if (fund.after_amount - fund.base >= config.min_rewards()){
-                let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-                let platform_fee = (fund.after_amount - fund.base) * config.platform_fee() / config.base_percentage();
-                let trader_fee = (fund.after_amount - fund.base) * fund.trader_fee / config.base_percentage();
-                let investor_amount = (fund.after_amount - platform_fee - trader_fee) * total_withdraw_share_amount / fund.share_amount;
-                let to_investor_balance = total_asset.split<FundCoinType>(investor_amount);
+            let total_balance = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+            let reward_amount = fund.after_amount - fund.base;
+            let platform_fee_amount = math::ceil(reward_amount, config.platform_fee_percentage(), config.base_percentage());
+            let trader_fee = math::ceil(reward_amount, fund.trader_fee, config.base_percentage());
+            let settle_fee = math::ceil(reward_amount, config.settle_percentage(), config.base_percentage());
+            
+            if (voucher_share_amount == 0){
+                let investor_amount = (fund.after_amount - platform_fee_amount - trader_fee - settle_fee) * common_share_amount / fund.share_amount;
+                let to_investor_balance = total_balance.split<FundCoinType>(investor_amount);
 
                 event::emit(
                     Claimed<FundCoinType>{
@@ -807,21 +836,34 @@ module stingray::fund{
                         shares: share_ids,
                     }
                 );
-
                 coin::from_balance<FundCoinType>(to_investor_balance, ctx)
             }else{
-                let total_asset = fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
-                let final_amount = fund.base * total_withdraw_share_amount / fund.share_amount;
+                let remaining_amount = (fund.after_amount - platform_fee_amount - trader_fee - settle_fee);
                 
+                // handle voucher part 
+                let voucher_withdraw_amount = remaining_amount * voucher_share_amount / fund.share_amount;
+                let reward_receiver_amount = math::ceil(remaining_amount, voucher_share_amount, fund.share_amount );
+                let to_pool_amount = voucher_withdraw_amount - reward_receiver_amount;
+                let to_pool_balance = total_balance.split<FundCoinType>(to_pool_amount);
+                voucher::put_back(pool, to_pool_balance);
+                
+                // handle common part 
+                let common_withdraw_amount = remaining_amount * common_share_amount / fund.share_amount;
+                
+                // total claim amount
+                let total_claim_amount = common_withdraw_amount + reward_receiver_amount;
+                let total_claim_balance = total_balance.split<FundCoinType>(total_claim_amount);
+
                 event::emit(
                     Claimed<FundCoinType>{
                         receiver: ctx.sender(),
                         fund: *fund.id.as_inner(),
-                        amount: final_amount,
+                        amount: total_claim_amount,
                         shares: share_ids,
                     }
                 );
-                coin::from_balance<FundCoinType>(total_asset.split(final_amount), ctx)
+
+                coin::from_balance(total_claim_balance, ctx)
             }
         }
     }
@@ -1046,6 +1088,32 @@ module stingray::fund{
         put_amount: u64,
     ){
         reqeust.put_amount = put_amount;
+    }
+
+    fun invest<FundCoinType>(
+        fund: &mut Fund<FundCoinType>,
+        invest_coin: Coin<FundCoinType>,
+        clock: &Clock,
+        ctx: &TxContext,
+    ){
+        
+        assert_if_over_invest_duration(fund, clock);
+        assert_if_not_arrived_invest_duration(fund, clock);
+
+        if (fund.allow_list.length() != 0){
+            assert_if_not_in_allow_list(fund, ctx.sender());
+        };
+
+        let total_balance = fund.asset.assets.borrow<TypeName, Balance<FundCoinType>>(type_name::get<Balance<FundCoinType>>());
+        let invest_amount = invest_coin.value();
+        fund.base = fund.base + invest_amount;
+        
+        assert_if_base_over_limit<FundCoinType>(fund, (total_balance.value() + invest_amount));
+
+        // put coin into asset bag
+        let asset_type = type_name::get<Balance<FundCoinType>>();
+        fund.asset.assets.borrow_mut<TypeName, Balance<FundCoinType>>(asset_type).join( invest_coin.into_balance());
+        fund.share_amount = fund.share_amount + invest_amount;
     }
 
     fun take_1_liquidity_for_1_liquidity< TakeCoinType, PutCoinType, FundCoinType>(
@@ -1370,7 +1438,6 @@ module stingray::fund{
 
     }
 
-
     fun check_take_amount<TakeCoinType, FundCoinType>(
         fund: &Fund<FundCoinType>,
         amount: u64,
@@ -1553,14 +1620,17 @@ module stingray::fund{
         assert!(!fund.allow_list.contains(account), EAccountAlreadyInAllowedList);
     }
 
-    fun pay_platforem_fee<CoinType>(
-        config: &GlobalConfig,
-        fund: &mut Fund<CoinType>,
-        amount: u64,
-        ctx: &mut TxContext,
+    fun assert_if_empty_voucher<FundCoinType>(
+        requests: &vector<VoucherConsumeRequest<FundCoinType>>
     ){
-        let platform_fee = fund.asset.assets.borrow_mut<TypeName, Balance<CoinType>>(type_name::get<Balance<CoinType>>()).split(amount);
-        transfer::public_transfer(coin::from_balance(platform_fee, ctx), config.platform());
+        assert!(requests.length() != 0, EVoucherArrayIsZero);
+    }
+
+    fun assert_if_provider_not_matched<FundCoinType>(
+        request: &VoucherConsumeRequest<FundCoinType>,
+        previos_provider: ID,
+    ){
+        assert!(request.base_provider().id_to_bytes() == previos_provider.id_to_bytes(), EBaseProviderNotMatched);
     }
 
     // temporary function

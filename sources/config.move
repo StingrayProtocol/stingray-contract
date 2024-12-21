@@ -11,7 +11,7 @@ module stingray::config{
         min_base: u64,
         settle_percentage: u64,
         base_percentage: u64,
-        platform_fee: u64,
+        platform_fee_percentage: u64,
         platform: address,
     }
 
@@ -34,7 +34,7 @@ module stingray::config{
             min_base: 10000,
             settle_percentage: 250,
             base_percentage: 10000,
-            platform_fee: 200,
+            platform_fee_percentage: 200,
             platform: @0x39dfa26ecaf49a466cfe33b2e98de9b46425eec170e59eb40d3f69d061a67778,
         };
 
@@ -75,9 +75,9 @@ module stingray::config{
     public fun update_platform_fee(
         _: &AdminCap,
         config: &mut GlobalConfig,
-        new_platform_fee: u64,
+        new_platform_fee_percentage: u64,
     ){
-        config.platform_fee = new_platform_fee;
+        config.platform_fee_percentage = new_platform_fee_percentage;
     }
 
     public fun update_min_base(
@@ -100,10 +100,10 @@ module stingray::config{
         config.trader_init_percentage
     }
 
-    public(package) fun platform_fee(
+    public(package) fun platform_fee_percentage(
         config: &GlobalConfig,
     ): u64{
-         config.platform_fee
+         config.platform_fee_percentage
     }
 
     public(package) fun min_rewards(

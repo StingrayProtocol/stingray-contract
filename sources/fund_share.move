@@ -7,6 +7,8 @@ module stingray::fund_share{
         event::{Self, },
     };
 
+    
+
     public struct FundShare has key, store {
         id: UID,
         fund_id: ID,
@@ -14,7 +16,10 @@ module stingray::fund_share{
         trader: address,
         fund_type: String,
         invest_amount: u64,
+        base_receiver: address,
+        reward_receiver: address,
     }
+
 
     public struct Invested has copy, drop{
         share_id: ID,
@@ -42,6 +47,8 @@ module stingray::fund_share{
         trader: address,
         fund_type: String,
         invest_amount: u64,
+        base_receiver: address,
+        reward_receiver: address,
     }
 
     public struct BurnRequest<phantom FundCoinType>{
@@ -68,17 +75,21 @@ module stingray::fund_share{
         trader: address,
         fund_type: String,
         invest_amount: u64,
+        base_receiver: address,
+        reward_receiver: address,
     ): MintRequest<FundCoinType>{
 
         config::assert_if_version_not_matched(config, VERSION);
         
-        MintRequest{
+        MintRequest<FundCoinType>{
             fund_id,
             is_init,
             trader,
             fund_type,
             invest_amount,
-            }
+            base_receiver,
+            reward_receiver,
+        }
     }
 
     public(package) fun create_burn_request<FundCoinType>(
@@ -107,6 +118,8 @@ module stingray::fund_share{
             trader: share.trader,
             fund_type: share.fund_type,
             invest_amount: amount,
+            base_receiver: share.base_receiver,
+            reward_receiver: share.reward_receiver,
         };
 
         event::emit(Splited{
@@ -131,6 +144,8 @@ module stingray::fund_share{
             trader: _,
             fund_type: _,
             invest_amount: invest_amount,
+            base_receiver:_,
+            reward_receiver:_,
         } = to_be_join;
         
         share.invest_amount = share.invest_amount + invest_amount;
@@ -153,12 +168,14 @@ module stingray::fund_share{
 
         config::assert_if_version_not_matched(config, VERSION);
 
-        let MintRequest{
+        let MintRequest<FundCoinType>{
             fund_id,
             is_init, 
             trader,
             fund_type,
             invest_amount,
+            base_receiver,
+            reward_receiver,
         } = request;
 
         let share = FundShare{
@@ -168,6 +185,8 @@ module stingray::fund_share{
             trader,
             fund_type,
             invest_amount,
+            base_receiver,
+            reward_receiver,
         };
 
         event::emit(Invested{
@@ -200,6 +219,8 @@ module stingray::fund_share{
             trader:_,
             fund_type:_,
             invest_amount:_,
+            base_receiver: _,
+            reward_receiver:_,
         } = share;
 
         object::delete(id);
@@ -227,6 +248,18 @@ module stingray::fund_share{
         share: &FundShare,
     ): ID{
         share.fund_id
+    }
+
+    public fun base_receiver(
+        share: &FundShare,
+    ): address{
+        share.base_receiver
+    }
+
+    public fun reward_receiver(
+        share: &FundShare,
+    ): address{
+        share.reward_receiver
     }
 
 
