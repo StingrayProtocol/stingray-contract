@@ -3,7 +3,7 @@ name = "stingray"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 # license = ""           # e.g., "MIT", "GPL", "Apache 2.0"
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
-#published-at = "0x21b91c9b340b39a14e3178e7f29244feda5ac3360539895bd05c30ae2a15f499"
+published-at = "0x94f6aa9e0f279a0ff4adaed9068b40df2344ddff0dea7325fd2d95c78f8e602c"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
